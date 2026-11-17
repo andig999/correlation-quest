@@ -16,31 +16,31 @@
     <p id="summary" aria-live="polite">Tests laufen …</p>
     <ul id="results"></ul>
     <script type="module">
-      import { createRng } from "./js/rng.js";
+      import { createRng } from "../js/rng.js";
       import {
         colorizeGroups,
         drawGroupRegressionLines,
         drawRegressionLine,
         markOutlier,
         renderPlot,
-      } from "./js/plot.js";
+      } from "../js/plot.js";
       import {
         advanceRound,
         createGameState,
         parseGuessInput,
         resolveRound,
         startRound,
-      } from "./js/game.js";
+      } from "../js/game.js";
       import {
         explanationFor,
         formatNumber,
         setLanguage,
         TEXTS_DE,
         TEXTS_EN,
-      } from "./js/texts.js";
-      import { linearRegression, mean, pearson, ranks, spearman } from "./js/stats.js";
-      import { createResultScale } from "./js/resultscale.js";
-      import { highscoreKey, parseVariant } from "./js/variant.js";
+      } from "../js/texts.js";
+      import { linearRegression, mean, pearson, ranks, spearman } from "../js/stats.js";
+      import { createResultScale } from "../js/resultscale.js";
+      import { highscoreKey, parseVariant } from "../js/variant.js";
       import {
         createScenario,
         generateMonotonic,
@@ -50,7 +50,7 @@
         generateSimpson,
         generateUForm,
         selectCoefficient,
-      } from "./js/scenarios.js";
+      } from "../js/scenarios.js";
 
       const tolerance = 0.0001;
       const results = document.getElementById("results");

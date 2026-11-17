@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Vorschau: Figuren und Icons</title>
-    <link rel="stylesheet" href="./css/characters.css">
+    <link rel="stylesheet" href="../css/characters.css">
     <style>
       :root {
         --parchment: #f5e8c8;
@@ -102,9 +102,9 @@
     </section>
 
     <script type="module">
-      import { CHARACTER_NAMES, CHARACTER_POSES, createCharacterSprite } from "./js/characters.js";
-      import { ICON_NAMES, iconUrl } from "./js/icons.js";
-      import { TEXTS } from "./js/texts.js";
+      import { CHARACTER_NAMES, CHARACTER_POSES, createCharacterSprite } from "../js/characters.js";
+      import { ICON_NAMES, iconUrl } from "../js/icons.js";
+      import { TEXTS } from "../js/texts.js";
 
       function el(tag, className = "", text = "") {
         const node = document.createElement(tag);

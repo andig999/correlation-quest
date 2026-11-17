@@ -104,7 +104,7 @@ Die Erklärtexte entwirft Copilot. Sie werden fachlich geprüft, bevor sie live 
 - Regression: b = cov(x, y) / var(x), a = ȳ − b·x̄.
 - Sonderfälle: n < 3 oder Varianz 0 liefern `NaN`, das darf in Szenarien nie vorkommen.
 
-### Referenzwerte für Tests (`test.html`)
+### Referenzwerte für Tests (`tools/test.html`)
 
 | Daten | r | ρ | b |
 |---|---|---|---|
@@ -130,7 +130,7 @@ js/plot.js       SVG-Plot, Symbole, Regressionsgeraden, Markierungen
 js/game.js       Spielzustand, Regeln, Ablauf
 js/texts.js      alle sichtbaren Texte
 js/main.js       Einstieg, verbindet alles
-test.html        Tests für stats.js und scenarios.js
+tools/test.html  Tests für stats.js und scenarios.js
 README.md        Zweck, lokale Nutzung, Hinweis auf GitHub Pages
 ```
 
@@ -250,7 +250,7 @@ Die Magierin erscheint im Hauptmenü, auf dem Endbildschirm und ab Version 0.3 i
 - Alle drei Figuren stehen nebeneinander, Reihenfolge Pear-Son, Regressions-Magierin, Spear-Man. Darüber der Titel, darunter die Buttons.
 - Spear-Man steht ganz rechts und ist horizontal gespiegelt, sodass er zur Mitte blickt.
 - Beim Öffnen des Hauptmenüs grüßen die Figuren einmal kurz (ca. 1 s), danach „ruhe“: Magierin und Spear-Man „winken“, Pear-Son „nachdenken“ (siehe Hinweis zu `pearson-waving.png`).
-- Liegt der Mauszeiger oder der Tastaturfokus auf einem Button: Pear-Son „zeigen“ (hält die Birne hin), Magierin „erklaeren“, Spear-Man „winken“. Spear-Mans „zeigen“ (Lanzenstoß) und der ausgestreckte Stab der Magierin würden im Menü wie ein Angriff auf die Nachbarfigur wirken und werden dort nicht verwendet.
+- Liegt der Mauszeiger oder der Tastaturfokus auf „Spiel starten“: Pear-Son „erklaeren“, Magierin „ueberrascht“, Spear-Man „winken“. Liegt er auf „Spielregeln“, denken alle drei Figuren „nach“. Spear-Mans „zeigen“ (Lanzenstoß) und der ausgestreckte Stab der Magierin würden im Menü wie ein Angriff auf die Nachbarfigur wirken und werden dort nicht verwendet.
 - Bei Klick auf einen Button wechseln sie ca. 0,6 s auf „jubel“, dann folgt die Aktion des Buttons. „Spiel starten“: alle drei. „Spielregeln“: nur Regression.
 
 ### Buttons und Oberfläche
@@ -271,7 +271,7 @@ Die Magierin erscheint im Hauptmenü, auf dem Endbildschirm und ab Version 0.3 i
 assets/sprites/*.png  Figuren (siehe Abschnitt 10), nicht verändern
 assets/icons/*.png    Icons (siehe Abschnitt 10), nicht verändern
 js/characters.js      Figuren anzeigen, Posen wechseln
-sprites-preview.html  Vorschau aller Figuren, Posen und Icons
+tools/sprites-preview.html  Vorschau aller Figuren, Posen und Icons
 design-preview.html   Designentwürfe, wird nach der Auswahl gelöscht
 ```
 

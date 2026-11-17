@@ -43,7 +43,10 @@ function preloadCharacter(character) {
     const image = new Image();
     image.onload = () => resolve([pose, image]);
     image.onerror = () => reject(new Error(`Figurenbild konnte nicht geladen werden: ${image.src}`));
-    image.src = `./assets/sprites/${character}-${POSE_FILES[pose] ?? pose}.png`;
+    image.src = new URL(
+      `../assets/sprites/${character}-${POSE_FILES[pose] ?? pose}.png`,
+      import.meta.url,
+    ).href;
   }))).then((entries) => new Map(entries));
   characterImages.set(character, pending);
   return pending;

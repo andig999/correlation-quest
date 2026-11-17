@@ -120,7 +120,7 @@ function promptTexts(coefficient) {
 function updateLanguageButton(button) {
   const active = getLanguage();
   const image = document.createElement("img");
-  image.src = `./assets/icons/language-${active}.png`;
+  image.src = new URL(`../assets/icons/language-${active}.png`, import.meta.url).href;
   image.alt = TEXTS.switchLanguage;
   button.replaceChildren(image);
   button.setAttribute("aria-label", TEXTS.switchLanguage);
@@ -279,8 +279,11 @@ Promise.all([...menuCharacters.values()].map((sprite) => sprite.ready))
 // Spear-Mans Lanzenstoß wirkt wie ein Angriff, der Stab der Magierin würde in Spear-Man hineinragen,
 // Pear-Sons Winken-Bild ist fehlerhaft (Birne schwebt), er denkt stattdessen nach.
 const MENU_POSE_OVERRIDES = {
-  zeigen: { spearman: "winken", regression: "erklaeren" },
   winken: { pearson: "nachdenken" },
+};
+const MENU_HOVER_POSES = {
+  start: { pearson: "erklaeren", spearman: "winken", regression: "ueberrascht" },
+  rules: { pearson: "nachdenken", spearman: "nachdenken", regression: "nachdenken" },
 };
 
 function setMenuCharacters(pose, selected = CHARACTER_NAMES) {
@@ -329,10 +332,17 @@ function registerGuessActivity() {
 
 function syncMenuCharacters() {
   if (greetingTimer) return;
-  const attended = menuButtons.some((button) => (
+  const attendedButton = menuButtons.find((button) => (
     button === document.activeElement || button.matches(":hover")
   ));
-  setMenuCharacters(attended ? "zeigen" : "ruhe");
+  if (!attendedButton) {
+    setMenuCharacters("ruhe");
+    return;
+  }
+  const buttonPoses = MENU_HOVER_POSES[attendedButton.id === "start-button" ? "start" : "rules"];
+  for (const character of CHARACTER_NAMES) {
+    void menuCharacters.get(character).setPose(buttonPoses[character]);
+  }
 }
 
 function playMenuAction(selectedCharacters, action) {

@@ -51,7 +51,7 @@ function assertIcon(name) {
 
 export function iconUrl(name) {
   assertIcon(name);
-  return `./assets/icons/${ICON_FILES[name] ?? name}.png`;
+  return new URL(`../assets/icons/${ICON_FILES[name] ?? name}.png`, import.meta.url).href;
 }
 
 function loadIcon(name) {
