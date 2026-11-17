@@ -188,6 +188,11 @@ Skripte oder externen Webdienste.
 
 ## Assets und Lizenzen
 
+Der selbst erstellte Quellcode und die zugehörige Dokumentation stehen unter
+der [MIT-Lizenz](LICENSE). Diese Lizenz gilt nicht automatisch für die
+Bild-Assets, die Press-Start-2P-Schrift oder Namen und Marken von IMBEI -
+Universitätsmedizin Mainz.
+
 Die verwendete Press-Start-2P-Schrift liegt zusammen mit ihrem Lizenzhinweis
 in `fonts/`. Die Bild-Assets des Spiels liegen in `assets/`. Für Änderungen an
 Figuren und Icons sollten die bestehenden Pixel-Art- und
