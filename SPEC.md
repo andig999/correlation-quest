@@ -1,8 +1,8 @@
-# SPEC: Correlation-Quest
+# SPEC: Correlation Quest
 
-Stand: 11.11.2026. Abschnitte 1–8: Version 1 (umgesetzt). Abschnitte 9–11: Version 1.1, Layout und Design (jetzt umsetzen, hat bei Widersprüchen Vorrang). Abschnitt 12: Version 1.2, Didaktik (erst später umsetzen).
+Stand: 17.11.2026. Abschnitte 1–8: Version 1 (umgesetzt). Abschnitte 9–11: Version 1.1, Layout und Design (umgesetzt). Abschnitt 12: Didaktik (Ergebnisskala umgesetzt, Rest zurückgestellt). Abschnitte 13–17: Version 0.3 (jetzt umsetzen, hat bei Widersprüchen Vorrang). Ab Version 0.3 folgt die Nummerierung den Prompt-Dateien (`PROMPTS-v0.x.md`).
 
-Der Name des Spiels ist „Correlation-Quest“ (bis 12.11.2026 Arbeitstitel „Correlation Guesser“; Repo und GitHub-Pages-Adresse heißen weiterhin `correlation-guesser`). Er steht nur an einer Stelle, als Konstante `APP_TITLE` in `js/texts.js`. index.html, Seitentitel und Überschriften lesen ihn von dort, damit eine spätere Umbenennung nur eine Zeile ändert.
+Der Name des Spiels ist „Correlation Quest“, Kurzform für Repo, Adressen und Dateinamen `correlation-quest` (bis 12.11.2026 „Correlation Guesser“, bis 17.11.2026 „Correlation-Quest“; siehe Abschnitt 13). Er steht nur an einer Stelle, als Konstante `APP_TITLE` in `js/texts.js`. index.html, Seitentitel und Überschriften lesen ihn von dort, damit eine spätere Umbenennung nur eine Zeile ändert.
 
 ## 1. Zweck und Zielgruppe
 
@@ -40,7 +40,7 @@ Ein einziger Modus. Jede Runde:
 
 ### Welcher Koeffizient wird gefragt?
 
-- Normale Runden: strikt abwechselnd Pearson, Spearman, Pearson, …
+- Normale Runden: strikt abwechselnd Pearson, Spearman, Pearson, … (ab Version 0.3 ersetzt durch Abschnitt 16: Pearson, Spearman, Steigung im Wechsel)
 - Runden „monoton“ und „Ausreißer“: mit 70 % Wahrscheinlichkeit Spearman, sonst Pearson.
 - Runden „U-Form“ und „Simpson“: folgen der Abwechslung der normalen Runden.
 
@@ -219,6 +219,8 @@ Dateinamen: `<figur>-<pose>.png`
 | `hinweis.png` | in der Auflösung von Sonderfall-Runden (monoton, Ausreißer, U-Form, Simpson) neben der Überschrift |
 | `burg.png` | Buttons „Menü“ und „Hauptmenü“ |
 | `pfeil.png` | Button „Weiter“ |
+| `steigung.png` | (ab 0.3) festes Symbol für die Steigung (violett), Aufgabenschild und Wert b |
+| `sprache-de.png`, `sprache-en.png` | (ab 0.3) Sprachumschalter, siehe Abschnitt 14 |
 
 ### Figuren im Spiel
 
@@ -230,7 +232,7 @@ Dateinamen: `<figur>-<pose>.png`
 
 ### Regression (Magierin)
 
-Die Magierin erscheint in Version 1.1 nur im Hauptmenü und auf dem Endbildschirm. Eine eigene Aufgabe im Spiel bekommt sie erst, wenn die Steigung eingeführt wird (siehe Abschnitt 12, „Offen“). Erklärtexte stehen weiterhin ohne Figur in der Auflösung.
+Die Magierin erscheint im Hauptmenü, auf dem Endbildschirm und ab Version 0.3 in den Steigungsrunden (Abschnitt 16). Erklärtexte stehen weiterhin ohne Figur in der Auflösung.
 
 ### Endbildschirm
 
@@ -270,7 +272,7 @@ design-preview.html   Designentwürfe, wird nach der Auswahl gelöscht
 
 ---
 
-# Version 1.2: Didaktik (noch nicht umsetzen)
+# Didaktik (Ergebnisskala umgesetzt, Rang-Ansicht, Ausreißer ausblenden und Intro zurückgestellt)
 
 ## 12. Pearson und Spearman unterscheidbar machen
 
@@ -306,6 +308,90 @@ In Runden „Ausreißer“ zusätzlich ein Schalter „Ausreißer ausblenden“.
 
 Karten 1 und 2 nutzen dieselbe kleine Beispielwolke (monoton gekrümmt), einmal mit Gerade, einmal in der Rang-Ansicht. Beim allerersten Besuch öffnet sich das Intro automatisch (Merker in `localStorage`). Neue Datei `js/intro.js`.
 
-### Offen
+### Steigung
 
-Ob die Steigung b eigene Sonderfälle bekommt („flach, aber eng“, „steil, aber breit“), wird noch geklärt.
+Geklärt mit Version 0.3: Die Steigung bekommt eine eigene Schätzkategorie (Abschnitt 16).
+
+---
+
+# Version 0.3: Name, Sprache, Reglerskala, Steigung schätzen
+
+## 13. Neuer Name: Correlation Quest
+
+- Anzeigename überall „Correlation Quest“ (ohne Bindestrich): `APP_TITLE` in `js/texts.js`, Seitentitel, Überschriften, README, test.html. Der Name gilt in beiden Sprachen.
+- Kurzform `correlation-quest` für Repo-Name, GitHub-Pages-Adresse und neue Speicher-Schlüssel.
+- Bestehende `localStorage`-Schlüssel (Highscore usw.) werden **nicht** umbenannt, sonst verlieren alle bisherigen Nutzer ihren Highscore.
+- Repo-Umbenennung auf GitHub erledigt der Mensch, nicht Copilot (siehe Prompt-Datei). GitHub leitet die Pages-Adresse eines umbenannten Repos nicht weiter: Der Moodle-Link muss danach auf `https://andig999.github.io/correlation-quest/` geändert werden.
+
+## 14. Sprache: Deutsch und Englisch
+
+- Zwei Sprachen: Deutsch (`de`) und Englisch (`en`). Standard ist Deutsch. Die Wahl wird in `localStorage` unter `correlation-quest-language` gespeichert (in `try/catch`, ohne Speicher gilt Deutsch).
+- Alle sichtbaren Texte, `alt`- und `aria`-Texte, Erklärtexte und der Seitentitel liegen je Sprache in `js/texts.js` (z. B. `TEXTS_DE`, `TEXTS_EN` mit identischen Schlüsseln). Kein sichtbarer Text im HTML oder in anderen JS-Dateien.
+- Englische Texte entwirft Copilot. Sie werden vor dem Live-Gang geprüft.
+- Feste Begriffe auf Englisch: „Pearson r“, „Spearman ρ“, „slope b“, Figurennamen „Pear-Son“, „Spear-Man“, „Regression Sorceress“. Untertitel: „A Statistics Adventure“.
+- Zahlen: Deutsch mit Komma (0,45), Englisch mit Punkt (0.45). Minuszeichen in beiden Sprachen „−“. Das Eingabefeld akzeptiert in beiden Sprachen Komma und Punkt.
+- `document.documentElement.lang` und `<title>` folgen der Sprache.
+
+### Umschalter
+
+- Icons: `assets/icons/sprache-de.png` (deutsche Flagge vorne, wird angezeigt, solange Deutsch aktiv ist) und `assets/icons/sprache-en.png` (britische Flagge vorne, solange Englisch aktiv ist). Originalgröße 56 × 44 px, Darstellung 1×, `image-rendering: pixelated`.
+- Ein Klick wechselt in die andere Sprache. `aria-label` je nach Zustand: „Sprache: Deutsch. Zu Englisch wechseln.“ bzw. „Language: English. Switch to German.“
+- Platzierung: im Hauptmenü oben rechts in der Menükarte und in der Statusleiste direkt links neben „Menü“. Er darf das Layout aus Abschnitt 9 nicht sprengen; auf schmalen Bildschirmen ggf. nur dort, wo Platz ist, aber immer im Hauptmenü.
+- Umschalten wirkt sofort auf die gesamte sichtbare Ansicht (auch eine laufende Runde oder Auflösung), ohne Spielstand, Plot, Figurenpose oder Fokus zu verändern.
+
+## 15. Skala am Schätzregler
+
+- Unter dem Schieberegler eine sehr schlichte Skala: kleine Striche mit Beschriftung an den Enden und in der Mitte, also „−1“, „0“, „+1“ (in Steigungsrunden „−2“, „0“, „+2“, siehe Abschnitt 16).
+- Die Beschriftung muss genau unter der Reglerposition des jeweiligen Werts stehen. Dafür die Breite des Reglerknopfs berücksichtigen (der Knopf erreicht die Ränder nicht ganz). Am einfachsten: eigenen Knopf mit fester Breite per CSS definieren und die Positionen daraus berechnen.
+- Prüfung: Regler auf Minimum, 0 und Maximum stellen; die Knopfmitte liegt jeweils höchstens 2 px neben der Mitte der zugehörigen Beschriftung, bei 1366 × 650 und 390 × 750.
+- Schrift klein und zurückhaltend, kein zusätzlicher Platzbedarf, der das Layout aus Abschnitt 9 sprengt.
+
+## 16. Neue Schätzkategorie: Steigung (Regressions-Magierin)
+
+### Ablauf und Auswahl
+
+- Drei Kategorien: Pearson r, Spearman ρ und Steigung b der Regressionsgeraden (kleinste Quadrate, y auf x).
+- Pro Runde zuerst wie bisher: mit 25 % ein Sonderfall (monoton, Ausreißer, U-Form, Simpson) mit der bisherigen Regel für Pearson/Spearman (Abschnitt 2). Sonderfälle fragen nie nach der Steigung.
+- Sonst eine normale Runde. Normale Runden wechseln strikt durch: Pearson, Spearman, Steigung, Pearson, … (Zähler nur über normale Runden, nicht über die Rundennummer).
+- Steigungsrunden nutzen einen eigenen Generator `steigung` (siehe unten).
+- Aufgabenschild: „Schätze die Steigung b“ / „Estimate the slope b“, Untertitel sinngemäß „Um wie viel steigt y, wenn x um 1 steigt?“. Die Regressionsgerade ist beim Schätzen nicht eingezeichnet.
+- Figur: Regressions-Magierin links vom Schild, Posen wie bei den anderen Figuren (ruhe, nachdenken nach 4 s, zeigen beim Bestätigen, jubel/enttaeuscht in der Auflösung). Ihr ausgestreckter Stab zeigt auf das Schild.
+
+### Generator `steigung`
+
+- Zielkorrelation ρ₀ mit |ρ₀| gleichverteilt aus [0,4; 0,98], Vorzeichen zufällig, bivariat normal wie bei `normal`.
+- Abweichend von Abschnitt 3 wird y **nicht** auf denselben Bereich wie x skaliert, sonst gilt fast immer b ≈ r. Stattdessen: x linear auf eine Spannweite von 45–90 Einheiten, y auf eine Spannweite von 15–90 Einheiten, jeweils zufällig innerhalb 5–95 verschoben. Achsen bleiben 0–100 mit Gitterlinien.
+- In etwa der Hälfte der Steigungsrunden einen Kontrastfall erzwingen: entweder „flach, aber eng“ (|r| ≥ 0,8 und |b| ≤ 0,4) oder „steil, aber locker“ (|r| ≤ 0,6 und |b| ≥ 1,0). Sonst frei.
+- Akzeptanz: |b| ≤ 1,9 (damit der Wert auf den Regler passt), kein `NaN`, Kontrastbedingungen erfüllt, falls gefordert. Sonst neu erzeugen.
+
+### Regler, Wertung, Statistik
+
+- Regler und Zahlenfeld in Steigungsrunden von −2 bis +2, Schrittweite 0,01; Reglerskala „−2“, „0“, „+2“.
+- Weil die Skala doppelt so breit ist, gelten doppelte Toleranzen: Fehler ≤ 0,10 Volltreffer (+1 Leben bis max. 3, +5 Münzen), ≤ 0,20 gut (+1 Münze), > 0,20 ein Leben weg.
+- Ø-Fehler in der Statusleiste: Steigungsfehler gehen halbiert ein, damit alle Kategorien vergleichbar bleiben.
+- `game.js` muss `steigung` als dritte Kategorie (`scenario.coefficient === "slope"`) akzeptieren; bisherige Prüfungen auf −1…1 entsprechend erweitern.
+
+### Auflösung in Steigungsrunden
+
+- Regressionsgerade wird eingezeichnet, in der Farbe der Magierin.
+- Werte: Steigung b hervorgehoben, daneben Pearson r zum Vergleich (Spearman ρ entfällt hier).
+- Ergebnisskala (Abschnitt 12) mit Bereich −2 bis +2, Markern für Schätzung und b, Bändern ±0,10 und ±0,20 um b.
+- Erklärsatz, wenn sich |b| und |r| um mehr als 0,3 unterscheiden, sinngemäß: „Die Steigung sagt, wie stark y pro Einheit x zunimmt. Die Korrelation sagt, wie eng die Punkte an der Geraden liegen. Beides kann sehr verschieden sein.“
+
+### Farbe und Icon
+
+- Neue feste Farbe für die Steigung: Violett der Magierin, CSS-Variable `--regression` (z. B. `#6b4c9a`), dazu `--regression-paper` als heller Hintergrund, analog zu Pearson und Spearman. Verwendung wie bei den anderen Kategorien (Schild, Regler, Werte, Ergebnisskala, Gerade).
+- Die Punktwolke und die Simpson-Gruppen dürfen kein Violett mehr verwenden (`#6F4E9C` in `plot.js` durch einen Grau- oder Braunton ersetzen).
+- Icon `assets/icons/steigung.png` (22 × 22 px, Steigungsdreieck mit violetter Geraden) für Aufgabenschild und Wert b in der Auflösung.
+
+### Lernziel
+
+Damit ist Lernziel 5 aus Abschnitt 1 abgedeckt: Steigung und Korrelation sind verschiedene Dinge.
+
+## 17. Tests (Ergänzung 0.3)
+
+- `texts.js`: Deutsch und Englisch haben exakt dieselben Schlüssel; jeder Text ist in beiden Sprachen nicht leer; Textfunktionen liefern in beiden Sprachen einen nicht leeren String.
+- Zahlenformat: 0,45 bzw. 0.45 und −0,45 bzw. −0.45.
+- Auswahl: Über 300 Runden kommen in normalen Runden alle drei Kategorien im festen Wechsel vor; Sonderfälle fragen nie nach der Steigung.
+- Generator `steigung` über 200 Seeds: |b| ≤ 1,9, kein `NaN`, Kontrastfälle erfüllen ihre Bedingungen, beide Kontrastfälle kommen vor.
+- Wertung Steigung: Fehler 0,10 → Volltreffer, 0,15 → gut, 0,21 → Leben weg; Ø-Fehler halbiert.
