@@ -1,5 +1,5 @@
 import { createRng } from "./rng.js";
-import { pearson, spearman } from "./stats.js";
+import { linearRegression, pearson, spearman } from "./stats.js";
 
 const SPECIAL_TYPES = ["monoton", "ausreisser", "uform", "simpson"];
 
@@ -25,7 +25,10 @@ function scalePoints(points) {
       throw new RangeError(`Cannot scale points with zero variance on ${key}.`);
     }
 
-    return values.map((value) => 5 + ((value - minimum) / (maximum - minimum)) * 90);
+    return values.map((value) => {
+      const proportion = (value - minimum) / (maximum - minimum);
+      return proportion === 0 ? 0.05 : proportion === 1 ? 0.95 : 0.05 + proportion * 0.9;
+    });
   };
 
   const x = scale("x");
@@ -33,8 +36,8 @@ function scalePoints(points) {
   return points.map((point, index) => ({ ...point, x: x[index], y: y[index] }));
 }
 
-function buildScenario(type, points, extra = {}) {
-  return { type, points: scalePoints(points), ...extra };
+function buildScenario(type, points, extra = {}, shouldScale = true) {
+  return { type, points: shouldScale ? scalePoints(points) : points, ...extra };
 }
 
 export function generateNormal(rng, n) {
@@ -47,6 +50,60 @@ export function generateNormal(rng, n) {
     return { x, y: targetCorrelation * x + residualScale * z };
   });
   return buildScenario("normal", points);
+}
+
+export function generateSlope(rng, n) {
+  assertGeneratorInput(rng, n);
+
+  for (let attempt = 0; attempt < 1000; attempt += 1) {
+    const contrast = rng.random() < 0.5
+      ? (rng.random() < 0.5 ? "flat" : "steep")
+      : null;
+    const targetCorrelation = (rng.random() < 0.5 ? -1 : 1) * (
+      contrast === "steep"
+        ? 0.55 + rng.random() * 0.05
+        : 0.4 + rng.random() * 0.58
+    );
+    const residualScale = Math.sqrt(1 - targetCorrelation ** 2);
+    const points = Array.from({ length: n }, () => {
+      const x = rng.normal();
+      const z = rng.normal();
+      return { x, y: targetCorrelation * x + residualScale * z };
+    });
+    const xSpan = contrast === "flat" ? 0.70 + rng.random() * 0.20
+      : contrast === "steep" ? 0.45 + rng.random() * 0.05 : 0.45 + rng.random() * 0.45;
+    const ySpan = contrast === "flat" ? 0.15 + rng.random() * 0.15
+      : contrast === "steep" ? 0.88 + rng.random() * 0.02 : 0.15 + rng.random() * 0.75;
+    const scale = (key, span) => {
+      const values = getValues(points, key);
+      const minimum = Math.min(...values);
+      const maximum = Math.max(...values);
+      const offset = 0.05 + rng.random() * (0.9 - span);
+      return values.map((value) => {
+        const proportion = (value - minimum) / (maximum - minimum);
+        return proportion === 0
+          ? offset
+          : proportion === 1
+            ? Math.min(0.95, offset + span)
+            : Math.min(0.95, offset + proportion * span);
+      });
+    };
+    const x = scale("x", xSpan);
+    const y = scale("y", ySpan);
+    const scaledPoints = points.map((point, index) => ({ x: x[index], y: y[index] }));
+    const regression = linearRegression(x, y);
+    const correlation = pearson(x, y);
+    const slope = regression.b;
+    const contrastValid = contrast === null
+      || (contrast === "flat" && Math.abs(correlation) >= 0.8 && Math.abs(slope) <= 0.4)
+      || (contrast === "steep" && Math.abs(correlation) <= 0.6 && Math.abs(slope) >= 1);
+
+    if (Number.isFinite(slope) && Math.abs(slope) <= 1.9 && contrastValid) {
+      return buildScenario("steigung", scaledPoints, { contrast }, false);
+    }
+  }
+
+  throw new Error("Could not generate a slope scenario meeting the slope conditions.");
 }
 
 export function generateMonotonic(rng, n) {
@@ -164,9 +221,9 @@ export function generateSimpson(rng, n) {
   throw new Error("Could not generate a Simpson scenario meeting the correlation thresholds.");
 }
 
-export function selectCoefficient(type, roundNumber, rng) {
-  if (!Number.isInteger(roundNumber) || roundNumber < 1) {
-    throw new RangeError("Expected a round number of at least 1.");
+export function selectCoefficient(type, normalRoundNumber, rng) {
+  if (!Number.isInteger(normalRoundNumber) || normalRoundNumber < 1) {
+    throw new RangeError("Expected a normal round number of at least 1.");
   }
   if (!rng || typeof rng.random !== "function") {
     throw new TypeError("Expected an RNG with a random() method.");
@@ -176,29 +233,35 @@ export function selectCoefficient(type, roundNumber, rng) {
     return rng.random() < 0.7 ? "spearman" : "pearson";
   }
   if (type === "normal" || type === "uform" || type === "simpson") {
-    return roundNumber % 2 === 1 ? "pearson" : "spearman";
+    if (type !== "normal") {
+      return normalRoundNumber % 2 === 1 ? "pearson" : "spearman";
+    }
+    return ["pearson", "spearman", "slope"][(normalRoundNumber - 1) % 3];
   }
   throw new RangeError(`Unknown scenario type: ${type}`);
 }
 
-export function createScenario(seed, roundNumber = 1) {
+export function createScenario(seed, roundNumber = 1, normalRoundNumber = roundNumber) {
   const rng = createRng(seed);
   const n = rng.integer(20, 150);
   const type = rng.random() < 0.75
     ? "normal"
     : SPECIAL_TYPES[rng.integer(0, SPECIAL_TYPES.length - 1)];
+  const coefficient = selectCoefficient(type, normalRoundNumber, rng);
   const generators = {
     normal: generateNormal,
+    steigung: generateSlope,
     monoton: generateMonotonic,
     ausreisser: generateOutlier,
     uform: generateUForm,
     simpson: generateSimpson,
   };
-  const scenario = generators[type](rng, n);
+  const scenario = generators[coefficient === "slope" ? "steigung" : type](rng, n);
   return {
     ...scenario,
     seed,
     n,
-    coefficient: selectCoefficient(type, roundNumber, rng),
+    isNormal: type === "normal",
+    coefficient,
   };
 }

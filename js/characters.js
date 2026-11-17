@@ -10,13 +10,17 @@ export const CHARACTER_POSES = [
   "winken",
 ];
 
-const CHARACTER_LABELS = {
-  pearson: "Pear-Son",
-  spearman: "Spear-Man",
-  regression: "Regressions-Magierin",
-};
-
 const characterImages = new Map();
+const POSE_FILES = Object.freeze({
+  ruhe: "resting",
+  zeigen: "pointing",
+  jubel: "celebrating",
+  enttaeuscht: "disappointed",
+  nachdenken: "thinking",
+  erklaeren: "explaining",
+  ueberrascht: "surprised",
+  winken: "waving",
+});
 
 function assertCharacter(character) {
   if (!CHARACTER_NAMES.includes(character)) {
@@ -39,7 +43,7 @@ function preloadCharacter(character) {
     const image = new Image();
     image.onload = () => resolve([pose, image]);
     image.onerror = () => reject(new Error(`Figurenbild konnte nicht geladen werden: ${image.src}`));
-    image.src = `./assets/sprites/${character}-${pose}.png`;
+    image.src = `./assets/sprites/${character}-${POSE_FILES[pose] ?? pose}.png`;
   }))).then((entries) => new Map(entries));
   characterImages.set(character, pending);
   return pending;
@@ -67,7 +71,8 @@ export function createCharacterSprite(character, { pose = "ruhe", scale = 2, cla
 
   const image = document.createElement("img");
   image.className = "character-image";
-  image.alt = `${CHARACTER_LABELS[character]} – ${pose}`;
+  image.dataset.pose = pose;
+  image.alt = pose;
   image.draggable = false;
   element.append(image);
 
@@ -92,7 +97,8 @@ export function createCharacterSprite(character, { pose = "ruhe", scale = 2, cla
 
       const selectedImage = images.get(nextPose);
       image.src = selectedImage.src;
-      image.alt = `${CHARACTER_LABELS[character]} – ${nextPose}`;
+      image.dataset.pose = nextPose;
+      image.alt = nextPose;
       setImageSize(image, selectedImage, scaleFactor);
 
       const restPose = images.get("ruhe");

@@ -1,11 +1,12 @@
 import { linearRegression } from "./stats.js";
+import { getLanguage, TEXTS } from "./texts.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const VIEW_SIZE = 600;
 const PLOT = { left: 66, right: 570, top: 26, bottom: 530 };
-const TICKS = [0, 25, 50, 75, 100];
-const COLORS = ["#005B94", "#6F4E9C", "#805000", "#4A5568", "#0072B2", "#A65F00"];
-const GROUP_COLORS = ["#005B94", "#6F4E9C", "#805000"];
+const TICKS = [0, 0.25, 0.5, 0.75, 1];
+const COLORS = ["#005B94", "#806040", "#805000", "#4A5568", "#0072B2", "#A65F00"];
+const GROUP_COLORS = ["#005B94", "#806040", "#805000"];
 const SYMBOLS = ["circle", "square", "triangle", "diamond", "cross"];
 const GROUP_SYMBOLS = ["circle", "triangle", "square"];
 let nextClipId = 0;
@@ -20,8 +21,8 @@ function createSvgElement(name, attributes = {}) {
 
 function getCoordinates(x, y) {
   return {
-    x: PLOT.left + (x / 100) * (PLOT.right - PLOT.left),
-    y: PLOT.bottom - (y / 100) * (PLOT.bottom - PLOT.top),
+    x: PLOT.left + x * (PLOT.right - PLOT.left),
+    y: PLOT.bottom - y * (PLOT.bottom - PLOT.top),
   };
 }
 
@@ -123,15 +124,17 @@ function addAxes(svg) {
       y: PLOT.bottom + 23,
       "text-anchor": "middle",
       class: "plot-tick-label",
+      "data-axis-tick": tick,
     });
-    xLabel.textContent = String(tick);
+    xLabel.textContent = formatAxisTick(tick);
     const yLabel = createSvgElement("text", {
       x: PLOT.left - 10,
       y: position.y + 4,
       "text-anchor": "end",
       class: "plot-tick-label",
+      "data-axis-tick": tick,
     });
-    yLabel.textContent = String(tick);
+    yLabel.textContent = formatAxisTick(tick);
     svg.append(xLabel, yLabel);
   }
 
@@ -153,14 +156,30 @@ function addAxes(svg) {
   svg.append(xLabel, yLabel);
 }
 
+function formatAxisTick(value) {
+  return new Intl.NumberFormat(getLanguage() === "de" ? "de-DE" : "en-US", {
+    maximumFractionDigits: 2,
+  }).format(value).replace("-", "−");
+}
+
+export function updatePlotLabels(svg) {
+  if (!(svg instanceof SVGElement)) {
+    throw new TypeError("Expected an SVG plot.");
+  }
+  svg.setAttribute("aria-label", TEXTS.plotAria);
+  svg.querySelectorAll("[data-axis-tick]").forEach((label) => {
+    label.textContent = formatAxisTick(Number(label.getAttribute("data-axis-tick")));
+  });
+}
+
 export function renderPlot(container, points, { random } = {}) {
   if (!(container instanceof Element)) {
     throw new TypeError("Expected a DOM element as the plot container.");
   }
   if (!Array.isArray(points) || points.length === 0
     || points.some(({ x, y }) => !Number.isFinite(x) || !Number.isFinite(y)
-      || x < 0 || x > 100 || y < 0 || y > 100)) {
-    throw new RangeError("Expected points with finite x and y values between 0 and 100.");
+      || x < 0 || x > 1 || y < 0 || y > 1)) {
+    throw new RangeError("Expected points with finite x and y values between 0 and 1.");
   }
   if (typeof random !== "function") {
     throw new TypeError("Expected a random number generator function.");
@@ -173,7 +192,7 @@ export function renderPlot(container, points, { random } = {}) {
   const svg = createSvgElement("svg", {
     viewBox: `0 0 ${VIEW_SIZE} ${VIEW_SIZE}`,
     role: "img",
-    "aria-label": "Quadratisches Streudiagramm mit x- und y-Achse von 0 bis 100",
+    "aria-label": TEXTS.plotAria,
     class: "scatterplot",
   });
 
@@ -241,7 +260,7 @@ export function drawRegressionLine(svg, points, {
     "stroke-linecap": "round",
     ...(strokeDasharray ? { "stroke-dasharray": strokeDasharray } : {}),
     "clip-path": `url(#${svg.querySelector("clipPath").id})`,
-    "aria-label": `Regressionsgerade, Steigung b = ${b.toFixed(2)}`,
+    "aria-label": TEXTS.regressionLineAria(b.toFixed(2)),
   });
   svg.append(line);
   return { line, a, b };
@@ -301,7 +320,7 @@ export function markOutlier(svg, pointIndex) {
     fill: "none",
     stroke: "#7A1FA2",
     "stroke-width": 2.5,
-    "aria-label": "Ausreißer",
+    "aria-label": TEXTS.outlierAria,
   });
   svg.append(ring);
   return ring;

@@ -1,6 +1,7 @@
 import {
   advanceRound,
   createGameState,
+  parseGuessInput,
   resolveRound,
   startRound,
 } from "./game.js";
@@ -11,50 +12,29 @@ import {
   drawRegressionLine,
   markOutlier,
   renderPlot,
+  updatePlotLabels,
 } from "./plot.js";
 import { CHARACTER_NAMES, createCharacterSprite } from "./characters.js";
 import { createRng } from "./rng.js";
 import { createIcon, preloadIcons, setIconLabel } from "./icons.js";
 import { createResultScale } from "./resultscale.js";
 import { pearson } from "./stats.js";
-import { APP_TITLE, explanationFor, TEXTS } from "./texts.js";
+import {
+  APP_TITLE,
+  explanationFor,
+  formatNumber,
+  getLanguage,
+  loadLanguage,
+  saveLanguage,
+  TEXTS,
+} from "./texts.js";
 
 const HIGH_SCORE_KEY = "correlation-guesser-highscore";
+loadLanguage();
 const root = document.querySelector("#app");
 if (!root) {
   throw new Error("The game container #app is missing.");
 }
-
-document.title = APP_TITLE;
-document.querySelector("#app-title").textContent = APP_TITLE;
-document.querySelector("#start-highscore-label").textContent = TEXTS.highscore;
-document.querySelector("#start-button").textContent = TEXTS.startGame;
-document.querySelector("#rules-button").textContent = TEXTS.gameRules;
-document.querySelector("#rules-title").textContent = TEXTS.rulesTitle;
-document.querySelector("#rules-start").textContent = TEXTS.rulesStart;
-document.querySelector("#rules-perfect").textContent = TEXTS.rulesPerfect;
-document.querySelector("#rules-close").textContent = TEXTS.rulesClose;
-document.querySelector("#rules-miss").textContent = TEXTS.rulesMiss;
-document.querySelector("#lives-label").textContent = TEXTS.lives;
-document.querySelector("#coins-label").textContent = TEXTS.coins;
-document.querySelector("#round-label").textContent = TEXTS.round;
-document.querySelector("#average-error-label").textContent = TEXTS.averageError;
-document.querySelector("#average-error-value").setAttribute("aria-label", TEXTS.averageErrorAccessible);
-document.querySelector("#guess-label").textContent = TEXTS.guessLabel;
-document.querySelector("#guess-input").setAttribute("aria-label", TEXTS.numberInputLabel);
-document.querySelector("#submit-guess").textContent = TEXTS.submitGuess;
-setIconLabel(document.querySelector("#menu-button"), "burg", TEXTS.menu);
-document.querySelector("#menu-confirmation-text").textContent = TEXTS.abandonPrompt;
-document.querySelector("#menu-confirm-yes").textContent = TEXTS.yes;
-document.querySelector("#menu-confirm-no").textContent = TEXTS.no;
-document.querySelector("#resolution-title").textContent = TEXTS.resolutionTitle;
-document.querySelector("#game-over-title").textContent = TEXTS.gameOverTitle;
-document.querySelector("#game-over-message").textContent = TEXTS.gameOverMessage;
-document.querySelector("#game-over-coins-label").textContent = TEXTS.gameOverCoins;
-document.querySelector("#highscore-label").textContent = TEXTS.highscore;
-document.querySelector("#new-game-button").textContent = TEXTS.newGame;
-setIconLabel(document.querySelector("#main-menu-button"), "burg", TEXTS.mainMenu);
-setIconLabel(document.querySelector("#continue-button"), "pfeil", TEXTS.continue);
 
 const elements = {
   startScreen: document.querySelector("#start-screen"),
@@ -85,6 +65,9 @@ const elements = {
   plot: document.querySelector("#plot"),
   form: document.querySelector("#guess-form"),
   slider: document.querySelector("#guess-slider"),
+  scaleMin: document.querySelector(".guess-scale-min b"),
+  scaleMid: document.querySelector(".guess-scale-mid b"),
+  scaleMax: document.querySelector(".guess-scale-max b"),
   input: document.querySelector("#guess-input"),
   inputError: document.querySelector("#input-error"),
   resolution: document.querySelector("#resolution"),
@@ -103,7 +86,115 @@ const elements = {
   highscore: document.querySelector("#highscore-value"),
   newGameButton: document.querySelector("#new-game-button"),
   mainMenuButton: document.querySelector("#main-menu-button"),
+  subtitle: document.querySelector("#subtitle"),
+  languageMenu: document.querySelector("#language-button-menu"),
+  languageHud: document.querySelector("#language-button-hud"),
 };
+
+function updateGuessScale() {
+  const min = Number(elements.slider.min);
+  const max = Number(elements.slider.max);
+  const mid = (min + max) / 2;
+  const label = (value) => `${value > 0 ? "+" : ""}${value}`;
+  elements.scaleMin.textContent = label(min).replace("-", "−");
+  elements.scaleMid.textContent = label(mid).replace("-", "−");
+  elements.scaleMax.textContent = label(max).replace("-", "−");
+}
+
+function guessLimit() {
+  return state?.scenario?.coefficient === "slope" ? 2 : 1;
+}
+
+function promptTexts(coefficient) {
+  if (coefficient === "pearson") return [TEXTS.pearsonPrompt, TEXTS.promptCaption, "linie"];
+  if (coefficient === "spearman") return [TEXTS.spearmanPrompt, TEXTS.promptCaption, "treppe"];
+  return [TEXTS.slopePrompt, TEXTS.slopePromptCaption, "steigung"];
+}
+
+function updateLanguageButton(button) {
+  const active = getLanguage();
+  const image = document.createElement("img");
+  image.src = `./assets/icons/language-${active}.png`;
+  image.alt = TEXTS.switchLanguage;
+  button.replaceChildren(image);
+  button.setAttribute("aria-label", TEXTS.switchLanguage);
+  button.title = TEXTS.switchLanguage;
+}
+
+function updateCharacterLabels() {
+  for (const sprite of [...menuCharacters.values(), roundCharacter].filter(Boolean)) {
+    sprite.image.alt = `${TEXTS.characterNames[sprite.element.dataset.character]} – ${
+      TEXTS.poseNames[sprite.pose]
+    }`;
+  }
+  elements.endCharacters.querySelectorAll("[data-character]").forEach((element) => {
+    const character = element.dataset.character;
+    const image = element.querySelector("img");
+    const pose = image?.dataset.pose ?? "ruhe";
+    if (image) image.alt = `${TEXTS.characterNames[character]} – ${TEXTS.poseNames[pose]}`;
+  });
+  elements.menuCharacters.setAttribute("aria-label", TEXTS.figuresLabel);
+  elements.endCharacters.setAttribute("aria-label", TEXTS.figuresLabel);
+}
+
+function applyTexts() {
+  document.documentElement.lang = getLanguage();
+  document.title = APP_TITLE;
+  updateGuessScale();
+  elements.subtitle.textContent = TEXTS.subtitle;
+  document.querySelector("#app-title").textContent = APP_TITLE;
+  document.querySelector("#start-highscore-label").textContent = TEXTS.highscore;
+  elements.startButton.textContent = TEXTS.startGame;
+  elements.rulesButton.textContent = TEXTS.gameRules;
+  document.querySelector("#rules-title").textContent = TEXTS.rulesTitle;
+  document.querySelector("#rules-start").textContent = TEXTS.rulesStart;
+  document.querySelector("#rules-perfect").textContent = TEXTS.rulesPerfect;
+  document.querySelector("#rules-close").textContent = TEXTS.rulesClose;
+  document.querySelector("#rules-miss").textContent = TEXTS.rulesMiss;
+  document.querySelector("#lives-label").textContent = TEXTS.lives;
+  document.querySelector("#coins-label").textContent = TEXTS.coins;
+  document.querySelector("#round-label").textContent = TEXTS.round;
+  document.querySelector("#average-error-label").textContent = TEXTS.averageError;
+  document.querySelector("#average-error-value").setAttribute("aria-label", TEXTS.averageErrorAccessible);
+  document.querySelector("#guess-label").textContent = TEXTS.guessLabel;
+  document.querySelector("#guess-input").setAttribute("aria-label", TEXTS.numberInputLabel);
+  document.querySelector("#submit-guess").textContent = TEXTS.submitGuess;
+  setIconLabel(elements.menuButton, "burg", TEXTS.menu);
+  document.querySelector("#menu-confirmation-text").textContent = TEXTS.abandonPrompt;
+  elements.menuConfirmYes.textContent = TEXTS.yes;
+  elements.menuConfirmNo.textContent = TEXTS.no;
+  elements.resolutionTitle.textContent = TEXTS.resolutionTitle;
+  document.querySelector("#game-over-title").textContent = TEXTS.gameOverTitle;
+  document.querySelector("#game-over-coins-label").textContent = TEXTS.gameOverCoins;
+  document.querySelector("#highscore-label").textContent = TEXTS.highscore;
+  elements.newGameButton.textContent = TEXTS.newGame;
+  setIconLabel(elements.mainMenuButton, "burg", TEXTS.mainMenu);
+  setIconLabel(elements.continueButton, "pfeil", TEXTS.continue);
+  updateLanguageButton(elements.languageMenu);
+  updateLanguageButton(elements.languageHud);
+  for (const [character, sprite] of menuCharacters) {
+    sprite.element.parentElement.querySelector(".menu-character-name").textContent = TEXTS.characterNames[character];
+    sprite.element.setAttribute("aria-label", TEXTS.characterNames[character]);
+  }
+  updateCharacterLabels();
+  const currentInput = parseGuessInput(elements.input.value);
+  if (Number.isFinite(currentInput)
+    && currentInput >= -guessLimit() && currentInput <= guessLimit()) {
+    elements.input.value = formatNumber(currentInput);
+  }
+  if (state.phase === "guess" && state.scenario) {
+    const [prompt, caption] = promptTexts(state.scenario.coefficient);
+    elements.promptTitle.querySelector("span:last-child").textContent = prompt;
+    elements.promptTitle.setAttribute("aria-label", prompt);
+    elements.promptCaption.textContent = caption;
+  } else if (state.phase === "resolution" && state.result) {
+    renderResolution(state.result.estimate, state.lives, state.coins, false);
+  } else if (state.phase === "gameover") {
+    elements.gameOverMessage.textContent = highscoreBeatenThisGame
+      ? TEXTS.newHighscore : TEXTS.highscoreUnchanged;
+  }
+  updateStatus();
+}
 
 document.querySelectorAll("[data-icon]").forEach((element) => {
   element.replaceChildren(createIcon(element.dataset.icon));
@@ -269,6 +360,7 @@ function readHighscore() {
 let highscore = readHighscore();
 elements.startHighscore.textContent = String(highscore);
 let state = createGameState(highscore);
+applyTexts();
 
 function saveHighscore(value) {
   if (value <= highscore) return;
@@ -280,13 +372,6 @@ function saveHighscore(value) {
     showStorageNotice(TEXTS.highscoreSaveError(error.message));
   }
   elements.startHighscore.textContent = String(highscore);
-}
-
-function formatNumber(value) {
-  return new Intl.NumberFormat("de-DE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
 }
 
 function renderHearts(previousLives = state.lives) {
@@ -370,37 +455,42 @@ function updateStatus({ previousLives = state.lives, previousCoins = state.coins
 
 function beginRound() {
   const seed = Math.floor(Math.random() * 4294967296);
-  const scenario = createScenario(seed, state.round + 1);
+  const scenario = createScenario(seed, state.round + 1, state.normalRounds + 1);
   elements.startScreen.hidden = true;
   elements.gameOverScreen.hidden = true;
   elements.gameScreen.hidden = false;
   elements.menuConfirmation.hidden = true;
   state = startRound(state, scenario);
   updateStatus();
-  setIconLabel(
-    elements.promptTitle,
-    scenario.coefficient === "pearson" ? "linie" : "treppe",
-    scenario.coefficient === "pearson" ? TEXTS.pearsonPrompt : TEXTS.spearmanPrompt,
-  );
-  elements.promptCaption.textContent = TEXTS.promptCaption;
+  const [prompt, caption, icon] = promptTexts(scenario.coefficient);
+  setIconLabel(elements.promptTitle, icon, prompt);
+  elements.promptCaption.textContent = caption;
   elements.promptBoard.classList.toggle("coefficient-pearson", scenario.coefficient === "pearson");
   elements.promptBoard.classList.toggle("coefficient-spearman", scenario.coefficient === "spearman");
+  elements.promptBoard.classList.toggle("coefficient-slope", scenario.coefficient === "slope");
   elements.promptBoard.style.removeProperty("padding-left");
   elements.slider.style.setProperty(
     "--coefficient-color",
-    scenario.coefficient === "pearson" ? "var(--pearson)" : "var(--spearman)",
+    scenario.coefficient === "pearson" ? "var(--pearson)"
+      : scenario.coefficient === "spearman" ? "var(--spearman)" : "var(--regression)",
   );
-  roundCharacter = createCharacterSprite(scenario.coefficient, {
+  elements.slider.min = String(-guessLimit());
+  elements.slider.max = String(guessLimit());
+  updateGuessScale();
+  roundCharacter = createCharacterSprite(
+    scenario.coefficient === "slope" ? "regression" : scenario.coefficient,
+    {
     pose: "ruhe",
     scale: 2,
     className: "round-character-sprite",
-  });
+    },
+  );
   elements.roundCharacter.replaceChildren(roundCharacter.element);
   elements.prompt.hidden = false;
   elements.form.hidden = false;
   elements.resolution.hidden = true;
   elements.inputError.textContent = "";
-  elements.input.value = "0.00";
+  elements.input.value = formatNumber(0);
   elements.slider.value = "0";
   renderPlot(elements.plot, scenario.points, { random: createRng(scenario.seed).random });
   setIconLabel(elements.continueButton, "pfeil", TEXTS.continue);
@@ -416,7 +506,8 @@ function appendCoefficient(label, value, highlighted, coefficient) {
   item.className = `coefficient coefficient-${coefficient}${highlighted ? " coefficient-highlighted" : ""}`;
   const term = document.createElement("span");
   term.className = "coefficient-term";
-  term.append(createIcon(coefficient === "pearson" ? "linie" : "treppe"), document.createTextNode(label));
+  const icon = coefficient === "pearson" ? "linie" : coefficient === "spearman" ? "treppe" : "steigung";
+  term.append(createIcon(icon), document.createTextNode(label));
   const number = document.createElement("strong");
   number.textContent = formatNumber(value);
   item.append(term, number);
@@ -435,25 +526,37 @@ function appendReward(icon, message) {
   elements.roundReward.append(item);
 }
 
-function renderResolution(estimate, previousLives, previousCoins) {
+function renderResolution(estimate, previousLives, previousCoins, animate = true) {
   const { scenario, result } = state;
   const svg = elements.plot.querySelector("svg");
   elements.coefficients.replaceChildren();
-  appendCoefficient(TEXTS.pearson, result.metrics.pearson, result.coefficient === "pearson", "pearson");
-  appendCoefficient(TEXTS.spearman, result.metrics.spearman, result.coefficient === "spearman", "spearman");
+  elements.coefficients.classList.toggle("single-coefficient", result.coefficient === "slope");
+  if (result.coefficient === "slope") {
+    appendCoefficient(TEXTS.regressionSlope, result.metrics.regression.b, true, "slope");
+  } else {
+    appendCoefficient(TEXTS.pearson, result.metrics.pearson, result.coefficient === "pearson", "pearson");
+    appendCoefficient(TEXTS.spearman, result.metrics.spearman, result.coefficient === "spearman", "spearman");
+  }
   elements.resultScale.replaceChildren(createResultScale({
     estimate,
     pearson: result.metrics.pearson,
-    spearman: result.metrics.spearman,
+    spearman: result.coefficient === "slope" ? undefined : result.metrics.spearman,
+    slope: result.coefficient === "slope" ? result.metrics.regression.b : undefined,
     asked: result.coefficient,
+    min: result.coefficient === "slope" ? -2 : -1,
+    max: result.coefficient === "slope" ? 2 : 1,
+    tolerance: result.coefficient === "slope" ? { wide: 0.2, narrow: 0.1 } : undefined,
     labels: {
       estimate: TEXTS.scaleEstimate,
       pearson: TEXTS.scalePearson,
       spearman: TEXTS.scaleSpearman,
+      slope: TEXTS.scaleSlope,
       ariaLabel: TEXTS.scaleAria(
         formatNumber(estimate),
         formatNumber(result.metrics.pearson),
         formatNumber(result.metrics.spearman),
+        formatNumber(result.metrics.regression.b),
+        result.coefficient === "slope" ? 2 : 1,
       ),
     },
   }));
@@ -476,7 +579,8 @@ function renderResolution(estimate, previousLives, previousCoins) {
     elements.roundReward.append(unchanged);
   }
 
-  const outcome = result.error <= 0.05 ? "perfect" : result.error <= 0.10 ? "good" : "miss";
+  const outcome = result.error <= (result.coefficient === "slope" ? 0.10 : 0.05)
+    ? "perfect" : result.error <= (result.coefficient === "slope" ? 0.20 : 0.10) ? "good" : "miss";
   elements.resolution.dataset.outcome = outcome;
   const outcomeText = outcome === "perfect"
     ? TEXTS.perfectHit
@@ -500,6 +604,7 @@ function renderResolution(estimate, previousLives, previousCoins) {
   }
   elements.explanation.hidden = !explanation;
   elements.regression.textContent = `${TEXTS.regressionSlope}: ${formatNumber(result.metrics.regression.b)}`;
+  elements.regression.classList.toggle("slope-highlighted", result.coefficient === "slope");
   elements.groupResults.replaceChildren();
 
   if (scenario.type === "simpson") {
@@ -526,7 +631,9 @@ function renderResolution(estimate, previousLives, previousCoins) {
       strokeDasharray: "10 7",
     });
   } else {
-    drawRegressionLine(svg, scenario.points, { color: "#416b38" });
+    drawRegressionLine(svg, scenario.points, {
+      color: result.coefficient === "slope" ? "var(--regression)" : "#416b38",
+    });
   }
   if (scenario.type === "ausreisser") {
     markOutlier(svg, scenario.outlierIndex);
@@ -534,35 +641,36 @@ function renderResolution(estimate, previousLives, previousCoins) {
 
   elements.form.hidden = true;
   elements.resolution.hidden = false;
-  const reactingCharacter = roundCharacter;
-  const spearmanPointing = result.coefficient === "spearman";
-  if (spearmanPointing) {
-    elements.promptBoard.style.paddingLeft = "5rem";
+  if (animate) {
+    const reactingCharacter = roundCharacter;
+    const spearmanPointing = result.coefficient === "spearman";
+    if (spearmanPointing) {
+      elements.promptBoard.style.paddingLeft = "5rem";
+    }
+    reactingCharacter.setPose("zeigen").then(() => {
+      const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 500;
+      window.setTimeout(() => {
+        reactingCharacter.setPose(result.error <= 0.10 ? "jubel" : "enttaeuscht")
+          .then(() => {
+            elements.promptBoard.style.removeProperty("padding-left");
+          });
+      }, delay);
+    });
   }
-  reactingCharacter.setPose("zeigen").then(() => {
-    window.setTimeout(() => {
-      reactingCharacter.setPose(result.error <= 0.10 ? "jubel" : "enttaeuscht")
-        .then(() => {
-          elements.promptBoard.style.removeProperty("padding-left");
-        });
-    }, 500);
-  });
   setIconLabel(elements.continueButton, "pfeil", state.lives === 0 ? TEXTS.finish : TEXTS.continue);
   updateStatus({ previousLives, previousCoins });
   elements.continueButton.focus();
 }
 
 elements.slider.addEventListener("input", () => {
-  elements.input.value = Number(elements.slider.value).toFixed(2);
+  elements.input.value = formatNumber(Number(elements.slider.value));
   elements.inputError.textContent = "";
   elements.input.removeAttribute("aria-invalid");
 });
 
 elements.input.addEventListener("input", () => {
-  const normalized = elements.input.value.trim().replace(",", ".");
-  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return;
-  const value = Number(normalized);
-  if (!Number.isFinite(value) || value < -1 || value > 1) return;
+  const value = parseGuessInput(elements.input.value);
+  if (!Number.isFinite(value) || value < -guessLimit() || value > guessLimit()) return;
   const steppedValue = Math.round(value * 100) / 100;
   elements.slider.value = String(steppedValue);
   elements.inputError.textContent = "";
@@ -570,12 +678,10 @@ elements.input.addEventListener("input", () => {
 });
 
 elements.input.addEventListener("change", () => {
-  const normalized = elements.input.value.trim().replace(",", ".");
-  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return;
-  const value = Number(normalized);
-  if (!Number.isFinite(value) || value < -1 || value > 1) return;
+  const value = parseGuessInput(elements.input.value);
+  if (!Number.isFinite(value) || value < -guessLimit() || value > guessLimit()) return;
   const steppedValue = Math.round(value * 100) / 100;
-  elements.input.value = steppedValue.toFixed(2);
+  elements.input.value = formatNumber(steppedValue);
   elements.slider.value = String(steppedValue);
 });
 
@@ -589,14 +695,12 @@ elements.input.addEventListener("keydown", (event) => {
 function adjustGuessWithArrowKey(event) {
   if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
   event.preventDefault();
-  const normalized = elements.input.value.trim().replace(",", ".");
-  const current = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)
-    ? Number(normalized)
-    : Number(elements.slider.value);
+  const parsed = parseGuessInput(elements.input.value);
+  const current = Number.isFinite(parsed) ? parsed : Number(elements.slider.value);
   const step = event.shiftKey ? 0.1 : 0.01;
   const direction = event.key === "ArrowUp" || event.key === "ArrowRight" ? 1 : -1;
-  const next = Math.max(-1, Math.min(1, Math.round((current + direction * step) * 100) / 100));
-  elements.input.value = next.toFixed(2);
+  const next = Math.max(-guessLimit(), Math.min(guessLimit(), Math.round((current + direction * step) * 100) / 100));
+  elements.input.value = formatNumber(next);
   elements.slider.value = String(next);
   elements.inputError.textContent = "";
   elements.input.removeAttribute("aria-invalid");
@@ -605,6 +709,18 @@ function adjustGuessWithArrowKey(event) {
 elements.input.addEventListener("keydown", adjustGuessWithArrowKey);
 elements.slider.addEventListener("keydown", adjustGuessWithArrowKey);
 
+function switchLanguage() {
+  const focusedId = document.activeElement?.id;
+  saveLanguage(getLanguage() === "de" ? "en" : "de");
+  applyTexts();
+  const plotSvg = elements.plot.querySelector("svg");
+  if (plotSvg) updatePlotLabels(plotSvg);
+  if (focusedId) document.getElementById(focusedId)?.focus();
+}
+
+elements.languageMenu.addEventListener("click", switchLanguage);
+elements.languageHud.addEventListener("click", switchLanguage);
+
 ["input", "keydown", "pointerdown"].forEach((type) => {
   elements.form.addEventListener(type, registerGuessActivity);
 });
@@ -612,17 +728,17 @@ elements.slider.addEventListener("keydown", adjustGuessWithArrowKey);
 elements.form.addEventListener("submit", (event) => {
   event.preventDefault();
   cancelThinking();
-  const normalized = elements.input.value.trim().replace(",", ".");
-  const typedEstimate = Number(normalized);
-  if (!normalized || !Number.isFinite(typedEstimate) || typedEstimate < -1 || typedEstimate > 1) {
-    elements.inputError.textContent = TEXTS.invalidGuess;
+  const typedEstimate = parseGuessInput(elements.input.value);
+  if (!Number.isFinite(typedEstimate)
+    || typedEstimate < -guessLimit() || typedEstimate > guessLimit()) {
+    elements.inputError.textContent = TEXTS.invalidGuess(guessLimit());
     elements.input.setAttribute("aria-invalid", "true");
     elements.input.focus();
     return;
   }
   elements.input.removeAttribute("aria-invalid");
   const estimate = Math.round(typedEstimate * 100) / 100;
-  elements.input.value = estimate.toFixed(2);
+  elements.input.value = formatNumber(estimate);
   const previousLives = state.lives;
   const previousCoins = state.coins;
   state = resolveRound(state, estimate);

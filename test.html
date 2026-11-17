@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Correlation-Quest – Tests</title>
+    <title>Correlation Quest – Tests</title>
     <style>
       body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 48rem; padding: 0 1rem; }
       .pass { color: #176b2c; }
@@ -12,7 +12,7 @@
     </style>
   </head>
   <body>
-    <h1>Statistik-, RNG- und Szenario-Tests</h1>
+    <h1>Correlation Quest – Statistik-, RNG- und Szenario-Tests</h1>
     <p id="summary" aria-live="polite">Tests laufen …</p>
     <ul id="results"></ul>
     <script type="module">
@@ -27,16 +27,25 @@
       import {
         advanceRound,
         createGameState,
+        parseGuessInput,
         resolveRound,
         startRound,
       } from "./js/game.js";
-      import { explanationFor } from "./js/texts.js";
+      import {
+        explanationFor,
+        formatNumber,
+        setLanguage,
+        TEXTS_DE,
+        TEXTS_EN,
+      } from "./js/texts.js";
       import { linearRegression, mean, pearson, ranks, spearman } from "./js/stats.js";
+      import { createResultScale } from "./js/resultscale.js";
       import {
         createScenario,
         generateMonotonic,
         generateNormal,
         generateOutlier,
+        generateSlope,
         generateSimpson,
         generateUForm,
         selectCoefficient,
@@ -68,6 +77,7 @@
         if (expected.r !== undefined) {
           checkNear(`${name}: Pearson r`, pearson(x, y), expected.r);
         }
+
         if (expected.rho !== undefined) {
           checkNear(`${name}: Spearman ρ`, spearman(x, y), expected.rho);
         }
@@ -77,6 +87,70 @@
         if (expected.a !== undefined) {
           checkNear(`${name}: Regression a`, linearRegression(x, y).a, expected.a);
         }
+      }
+
+      function textKeys(value, prefix = "") {
+        return Object.entries(value).flatMap(([key, entry]) => {
+          const path = prefix ? `${prefix}.${key}` : key;
+          return entry && typeof entry === "object" && typeof entry !== "function"
+            ? textKeys(entry, path) : [path];
+        }).sort();
+      }
+
+      const germanKeys = textKeys(TEXTS_DE);
+      const englishKeys = textKeys(TEXTS_EN);
+      check("Texte: Deutsch und Englisch haben dieselben Schlüssel",
+        JSON.stringify(germanKeys) === JSON.stringify(englishKeys));
+      check("Texte: jeder deutsche Text ist nicht leer",
+        germanKeys.every((key) => {
+          const value = key.split(".").reduce((object, part) => object[part], TEXTS_DE);
+          return typeof value === "function" || (typeof value === "string" && value.trim() !== "");
+        }));
+      check("Texte: jeder englische Text ist nicht leer",
+        englishKeys.every((key) => {
+          const value = key.split(".").reduce((object, part) => object[part], TEXTS_EN);
+          return typeof value === "function" || (typeof value === "string" && value.trim() !== "");
+        }));
+      setLanguage("de");
+      check("Zahlenformat Deutsch: 0,45 und −0,45",
+        formatNumber(0.45) === "0,45" && formatNumber(-0.45) === "−0,45");
+      setLanguage("en");
+      check("Zahlenformat Englisch: 0.45 und −0.45",
+        formatNumber(0.45) === "0.45" && formatNumber(-0.45) === "−0.45");
+      check("Eingabe akzeptiert verschiedene Minus- und Dezimalzeichen",
+        parseGuessInput("−0,45") === -0.45
+          && parseGuessInput("-0.45") === -0.45
+          && parseGuessInput("-,5") === -0.5);
+      const slopeScale = createResultScale({
+        estimate: 0.2,
+        pearson: 0.7,
+        slope: 0.8,
+        asked: "slope",
+        min: -2,
+        max: 2,
+        tolerance: { wide: 0.2, narrow: 0.1 },
+        labels: {
+          estimate: "Schätzung",
+          pearson: "Pearson r",
+          slope: "Steigung b",
+          ariaLabel: "Steigungsskala",
+        },
+      });
+      check("Steigungsskala zeigt nur Schätzung und b",
+        slopeScale.querySelector(".marker-estimate")
+          && slopeScale.querySelector(".marker-slope")
+          && !slopeScale.querySelector(".marker-pearson"));
+      setLanguage("de");
+      for (const [language, texts] of [["Deutsch", TEXTS_DE], ["Englisch", TEXTS_EN]]) {
+        const generated = [
+          texts.charactersLoadError("x"),
+          texts.roundResolved(1),
+          texts.scaleAria("0.00", "0.45", "0.45"),
+          texts.guessResult("0.00", "0.45"),
+          texts.scenarioExplanations.normalDifference,
+        ];
+        check(`Textfunktionen ${language} liefern nicht leere Texte`,
+          generated.every((text) => typeof text === "string" && text.trim() !== ""));
       }
 
       const sequence = [1, 2, 3, 4, 5];
@@ -122,6 +196,7 @@
 
       const generators = [
         ["normal", generateNormal],
+        ["steigung", generateSlope],
         ["monoton", generateMonotonic],
         ["ausreisser", generateOutlier],
         ["uform", generateUForm],
@@ -148,11 +223,19 @@
             && Number.isFinite(b)
             && scenario.points.every((point) => (
               Number.isFinite(point.x) && Number.isFinite(point.y)
-                && point.x >= 5 && point.x <= 95
-                && point.y >= 5 && point.y <= 95
+                && point.x >= 0.05 && point.x <= 0.95
+                && point.y >= 0.05 && point.y <= 0.95
             ))
-            && Math.min(...x) === 5 && Math.max(...x) === 95
-            && Math.min(...y) === 5 && Math.max(...y) === 95;
+            && (type === "steigung"
+              || (Math.min(...x) === 0.05 && Math.max(...x) === 0.95
+                && Math.min(...y) === 0.05 && Math.max(...y) === 0.95));
+
+          if (type === "steigung") {
+            const contrastValid = scenario.contrast === null
+              || (scenario.contrast === "flat" && Math.abs(r) >= 0.8 && Math.abs(b) <= 0.4)
+              || (scenario.contrast === "steep" && Math.abs(r) <= 0.6 && Math.abs(b) >= 1);
+            valid = valid && Math.abs(b) <= 1.9 && contrastValid;
+          }
 
           if (type === "monoton") {
             const ordered = scenario.points.every((point, index) => (
@@ -190,16 +273,27 @@
         }
       }
 
-      const roundTypes = ["normal", "uform", "simpson"];
-      check("Pearson/Spearman wechseln in normalen, U-Form- und Simpson-Runden",
+      const roundTypes = ["uform", "simpson"];
+      check("Pearson/Spearman wechseln in U-Form- und Simpson-Runden",
         roundTypes.every((type) => (
           selectCoefficient(type, 1, createRng(1)) === "pearson"
             && selectCoefficient(type, 2, createRng(1)) === "spearman"
         )));
+      check("Normale Runden wechseln Pearson, Spearman und Steigung",
+        [1, 2, 3, 4, 5, 6].every((round, index) => (
+          selectCoefficient("normal", round, createRng(1))
+            === ["pearson", "spearman", "slope"][index % 3]
+        )));
+      check("Sonderfälle fragen nie nach der Steigung",
+        ["monoton", "ausreisser", "uform", "simpson"].every((type) => (
+          [1, 2, 3].every((round) => selectCoefficient(type, round, createRng(1)) !== "slope")
+        )));
 
       let spearmanCount = 0;
       let sampleSizesValid = true;
-      const scenarioCounts = { normal: 0, monoton: 0, ausreisser: 0, uform: 0, simpson: 0 };
+      const scenarioCounts = {
+        normal: 0, steigung: 0, monoton: 0, ausreisser: 0, uform: 0, simpson: 0,
+      };
       for (let seed = 0; seed < 1000; seed += 1) {
         const scenario = createScenario(seed, 1);
         scenarioCounts[scenario.type] += 1;
@@ -208,23 +302,43 @@
         }
         sampleSizesValid = sampleSizesValid && scenario.n === scenario.points.length
           && scenario.n >= 20 && scenario.n <= 150
-          && (scenario.type === "monoton" || scenario.type === "ausreisser"
+          && (scenario.type === "steigung" ? scenario.coefficient === "slope"
+            : scenario.type === "monoton" || scenario.type === "ausreisser"
             ? scenario.coefficient === "pearson" || scenario.coefficient === "spearman"
             : scenario.coefficient === "pearson");
       }
       check("Szenario-Auswahl: 75 % normal, Sonderfälle gleichverteilt",
-        scenarioCounts.normal > 700 && scenarioCounts.normal < 800
-          && Object.values(scenarioCounts).slice(1).every((count) => count > 40 && count < 90),
+        scenarioCounts.normal + scenarioCounts.steigung > 700
+          && scenarioCounts.normal + scenarioCounts.steigung < 800
+          && Object.values(scenarioCounts).slice(2).every((count) => count > 40 && count < 90),
         JSON.stringify(scenarioCounts));
       check("n liegt bei allen Szenarien zwischen 20 und 150", sampleSizesValid);
       check("Monoton/Ausreißer fragen in 70 % der Fälle Spearman",
         spearmanCount / (scenarioCounts.monoton + scenarioCounts.ausreisser) > 0.65
           && spearmanCount / (scenarioCounts.monoton + scenarioCounts.ausreisser) < 0.75);
 
+      const slopeScenario = {
+        type: "steigung",
+        coefficient: "slope",
+        points: [{ x: 0.05, y: 0.05 }, { x: 0.5, y: 0.5 }, { x: 0.95, y: 0.95 }],
+      };
+      const slopeState = startRound(createGameState(), slopeScenario);
+      const slopeHit = resolveRound(slopeState, 0.9);
+      const slopeGood = resolveRound(startRound(createGameState(), slopeScenario), 0.85);
+      const slopeMiss = resolveRound(startRound(createGameState(), slopeScenario), 0.79);
+      check("Steigung: Fehler 0,10 ist Volltreffer", slopeHit.result.error === 0.1
+        && slopeHit.coins === 5 && slopeHit.lives === 3);
+      check("Steigung: Fehler 0,15 ist gut", slopeGood.result.error === 0.15
+        && slopeGood.coins === 1 && slopeGood.lives === 3);
+      check("Steigung: Fehler 0,21 kostet ein Leben", slopeMiss.result.error === 0.21
+        && slopeMiss.coins === 0 && slopeMiss.lives === 2);
+      check("Steigung: Fehler geht halbiert in den Durchschnitt ein",
+        slopeHit.result.averageError === 0.05);
+
       const exactScenario = {
         type: "normal",
         coefficient: "pearson",
-        points: [{ x: 5, y: 5 }, { x: 50, y: 50 }, { x: 95, y: 95 }],
+        points: [{ x: 0.05, y: 0.05 }, { x: 0.5, y: 0.5 }, { x: 0.95, y: 0.95 }],
       };
       const preciseRound = resolveRound(startRound(createGameState(), exactScenario), 0.95);
       check("Spielregel: Treffer bei 3 Leben belässt Leben bei 3 und bringt 5 Münzen",
@@ -260,7 +374,7 @@
         plotSvg.getAttribute("viewBox") === "0 0 600 600"
           && plotSvg.querySelectorAll(".plot-point").length === simpson.points.length
           && [...plotSvg.querySelectorAll(".plot-tick-label")].filter(
-            (label) => ["0", "25", "50", "75", "100"].includes(label.textContent),
+            (label) => ["0", "0,25", "0,5", "0,75", "1"].includes(label.textContent),
           ).length === 10);
       const crossSvg = renderPlot(plotContainer, simpson.points, { random: () => 0.99 });
       const cross = crossSvg.querySelector(".plot-point");
@@ -269,7 +383,7 @@
           && cross.getAttribute("color") === cross.getAttribute("fill"));
 
       const expectedPlotColors = new Set([
-        "#005B94", "#6F4E9C", "#805000", "#4A5568", "#0072B2", "#A65F00",
+        "#005B94", "#806040", "#805000", "#4A5568", "#0072B2", "#A65F00",
       ]);
       const renderedPlotColors = new Set(Array.from({ length: 6 }, (_, index) => {
         const color = (index + 0.1) / 6;
@@ -311,7 +425,7 @@
         groupStyles.size === 3 && groupLines.length === 3
           && groupLines.every(({ b }) => Number.isFinite(b))
           && [...groupStyles].every((style) => (
-            ["#005B94", "#6F4E9C", "#805000"].some((color) => style.startsWith(`${color}:`))
+            ["#005B94", "#806040", "#805000"].some((color) => style.startsWith(`${color}:`))
           )));
       check("Simpson-Gesamtgerade ist neutral, gestrichelt, dicker und zuletzt gezeichnet",
         overallLine === groupedSvg.lastElementChild

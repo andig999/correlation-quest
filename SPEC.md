@@ -1,6 +1,6 @@
 # SPEC: Correlation Quest
 
-Stand: 17.11.2026. Abschnitte 1–8: Version 1 (umgesetzt). Abschnitte 9–11: Version 1.1, Layout und Design (umgesetzt). Abschnitt 12: Didaktik (Ergebnisskala umgesetzt, Rest zurückgestellt). Abschnitte 13–17: Version 0.3 (jetzt umsetzen, hat bei Widersprüchen Vorrang). Ab Version 0.3 folgt die Nummerierung den Prompt-Dateien (`PROMPTS-v0.x.md`).
+Stand: 17.11.2026. Abschnitte 1–8: Version 1 (umgesetzt). Abschnitte 9–11: Version 1.1, Layout und Design (umgesetzt). Abschnitt 12: Didaktik (Ergebnisskala umgesetzt, Rest zurückgestellt). Abschnitte 13–17: Version 0.3 (umgesetzt). Nachtrag 0.3.1: Eingabeparser, Plot-Skala und Steigungs-Ergebnisskala korrigiert.
 
 Der Name des Spiels ist „Correlation Quest“, Kurzform für Repo, Adressen und Dateinamen `correlation-quest` (bis 12.11.2026 „Correlation Guesser“, bis 17.11.2026 „Correlation-Quest“; siehe Abschnitt 13). Er steht nur an einer Stelle, als Konstante `APP_TITLE` in `js/texts.js`. index.html, Seitentitel und Überschriften lesen ihn von dort, damit eine spätere Umbenennung nur eine Zeile ändert.
 
@@ -72,7 +72,7 @@ Jeder Generator gibt zurück: `{ type, points: [{x, y, group?}], groups? }`. r, 
 
 ### Darstellungsbereich
 
-Nach der Erzeugung werden x und y jeweils linear auf den Bereich 5–95 transformiert. Achsen gehen von 0 bis 100 mit Teilstrichen bei 0, 25, 50, 75, 100. Achsenbeschriftung nur „x“ und „y“. Lineare Transformationen ändern r und ρ nicht. b wird auf den transformierten Werten berechnet. Das Diagramm ist quadratisch.
+Nach der Erzeugung werden x und y jeweils linear auf den Bereich 0,05–0,95 transformiert. Achsen gehen von 0 bis 1 mit Teilstrichen bei 0, 0,25, 0,5, 0,75, 1. Zahlen werden je Sprache formatiert (Deutsch mit Komma, Englisch mit Punkt). Achsenbeschriftung nur „x“ und „y“. Lineare Transformationen ändern r und ρ nicht; die gemeinsame Skalierung von x und y ändert auch b nicht. Das Diagramm ist quadratisch.
 
 ## 4. Optik
 
@@ -189,7 +189,11 @@ Pixel-Art-Rollenspiel-Stil. Das Tool soll wie ein kleines Spiel wirken und nicht
 
 Drei Figuren im Pixel-Art-Stil mit je acht Posen, als fertige PNG-Dateien mit transparentem Hintergrund in `assets/sprites/`. Copilot erzeugt oder verändert diese Bilder nicht, sondern bindet sie nur ein.
 
-Dateinamen: `<figur>-<pose>.png`
+Dateinamen: `<figur>-<pose>.png`. Die Asset-Dateien verwenden englische Posen:
+`resting`, `pointing`, `celebrating`, `disappointed`, `thinking`, `explaining`,
+`surprised`, `waving`. Die internen Pose-Schlüssel bleiben zur Kompatibilität
+`ruhe`, `zeigen`, `jubel`, `enttaeuscht`, `nachdenken`, `erklaeren`,
+`ueberrascht`, `winken`.
 
 - Figuren: `pearson` (Beschriftung „Pear-Son“, Bauer mit Birne), `spearman` („Spear-Man“, Speerträger), `regression` („Regressions-Magierin“, Magierin mit Stab)
 - Posen: `ruhe`, `zeigen`, `jubel`, `enttaeuscht`, `nachdenken`, `erklaeren`, `ueberrascht`, `winken`
@@ -198,29 +202,29 @@ Dateinamen: `<figur>-<pose>.png`
 - Ausrichtung: unten bündig, damit beim Wechsel der Pose nichts springt. Manche Posen sind breiter oder höher als die Ruhe-Pose.
 - Zusätzliche Bewegung nur über CSS: leichtes Wippen bei „ruhe“, kurzes Hüpfen beim Wechsel auf „jubel“. Bei `prefers-reduced-motion` ohne Bewegung.
 - In Version 1.1 genutzt: ruhe, zeigen, jubel, enttaeuscht, nachdenken, winken, im Hauptmenü zusätzlich erklaeren (Magierin). Für Version 1.2 vorgesehen: erklaeren, ueberrascht.
-- `pearson-winken.png` ist fehlerhaft (die Birne schwebt neben der Hüfte) und wird nicht verwendet, bis ein korrigiertes Bild vorliegt. Stattdessen nutzt Pear-Son dort „nachdenken“.
+- `pearson-waving.png` ist fehlerhaft (die Birne schwebt neben der Hüfte) und wird nicht verwendet, bis ein korrigiertes Bild vorliegt. Stattdessen nutzt Pear-Son dort „nachdenken“.
 
 ### Icons
 
-15 Icons als PNG in `assets/icons/`, gleicher Stil wie die Figuren, Originalgröße ca. 17–27 px. Darstellung ganzzahlig skaliert (meist 2×) mit `image-rendering: pixelated`, Maße aus `naturalWidth`/`naturalHeight`.
+18 Icons als PNG in `assets/icons/`, gleicher Stil wie die Figuren, Originalgröße ca. 17–27 px. Darstellung ganzzahlig skaliert (meist 2×) mit `image-rendering: pixelated`, Maße aus `naturalWidth`/`naturalHeight`.
 
 | Datei | Verwendung |
 |---|---|
-| `herz-voll.png`, `herz-leer.png`, `herz-gebrochen.png` | Herz-Slots im HUD, gebrochen kurz beim Verlust |
-| `muenze.png` | Münzen im HUD und in der Rückmeldung |
-| `fahne.png` | Runde im HUD |
-| `zielscheibe.png` | Ø-Fehler im HUD |
-| `pokal.png` | Highscore im Hauptmenü und auf dem Endbildschirm, neuer Rekord |
-| `birne.png` | Dekoration, z. B. im Titel |
-| `linie.png` | festes Symbol für Pearson (grün), im Aufgabenschild und bei r in der Auflösung |
-| `treppe.png` | festes Symbol für Spearman (rot), im Aufgabenschild und bei ρ in der Auflösung |
-| `gluehbirne.png` | vor dem Erklärtext in der Auflösung |
-| `schriftrolle.png` | derzeit nicht verwendet (Button und Karte „Spielregeln“ bleiben ohne Icon) |
-| `hinweis.png` | in der Auflösung von Sonderfall-Runden (monoton, Ausreißer, U-Form, Simpson) neben der Überschrift |
-| `burg.png` | Buttons „Menü“ und „Hauptmenü“ |
-| `pfeil.png` | Button „Weiter“ |
-| `steigung.png` | (ab 0.3) festes Symbol für die Steigung (violett), Aufgabenschild und Wert b |
-| `sprache-de.png`, `sprache-en.png` | (ab 0.3) Sprachumschalter, siehe Abschnitt 14 |
+| `full-heart.png`, `empty-heart.png`, `broken-heart.png` | Herz-Slots im HUD, gebrochen kurz beim Verlust |
+| `coin.png` | Münzen im HUD und in der Rückmeldung |
+| `flag.png` | Runde im HUD |
+| `target.png` | Ø-Fehler im HUD |
+| `trophy.png` | Highscore im Hauptmenü und auf dem Endbildschirm, neuer Rekord |
+| `pear.png` | Dekoration, z. B. im Titel |
+| `line.png` | festes Symbol für Pearson (grün), im Aufgabenschild und bei r in der Auflösung |
+| `stairs.png` | festes Symbol für Spearman (rot), im Aufgabenschild und bei ρ in der Auflösung |
+| `lightbulb.png` | vor dem Erklärtext in der Auflösung |
+| `scroll.png` | derzeit nicht verwendet (Button und Karte „Spielregeln“ bleiben ohne Icon) |
+| `hint.png` | in der Auflösung von Sonderfall-Runden (monoton, Ausreißer, U-Form, Simpson) neben der Überschrift |
+| `castle.png` | Buttons „Menü“ und „Hauptmenü“ |
+| `arrow.png` | Button „Weiter“ |
+| `slope.png` | (ab 0.3) festes Symbol für die Steigung (violett), Aufgabenschild und Wert b |
+| `language-de.png`, `language-en.png` | (ab 0.3) Sprachumschalter, siehe Abschnitt 14 |
 
 ### Figuren im Spiel
 
@@ -244,7 +248,7 @@ Die Magierin erscheint im Hauptmenü, auf dem Endbildschirm und ab Version 0.3 i
 
 - Alle drei Figuren stehen nebeneinander, Reihenfolge Pear-Son, Regressions-Magierin, Spear-Man. Darüber der Titel, darunter die Buttons.
 - Spear-Man steht ganz rechts und ist horizontal gespiegelt, sodass er zur Mitte blickt.
-- Beim Öffnen des Hauptmenüs grüßen die Figuren einmal kurz (ca. 1 s), danach „ruhe“: Magierin und Spear-Man „winken“, Pear-Son „nachdenken“ (siehe Hinweis zu `pearson-winken.png`).
+- Beim Öffnen des Hauptmenüs grüßen die Figuren einmal kurz (ca. 1 s), danach „ruhe“: Magierin und Spear-Man „winken“, Pear-Son „nachdenken“ (siehe Hinweis zu `pearson-waving.png`).
 - Liegt der Mauszeiger oder der Tastaturfokus auf einem Button: Pear-Son „zeigen“ (hält die Birne hin), Magierin „erklaeren“, Spear-Man „winken“. Spear-Mans „zeigen“ (Lanzenstoß) und der ausgestreckte Stab der Magierin würden im Menü wie ein Angriff auf die Nachbarfigur wirken und werden dort nicht verwendet.
 - Bei Klick auf einen Button wechseln sie ca. 0,6 s auf „jubel“, dann folgt die Aktion des Buttons. „Spiel starten“: alle drei. „Spielregeln“: nur Regression.
 
@@ -286,7 +290,7 @@ In der Auflösung eine waagrechte Skala von −1 bis 1 mit drei Markern: eigene 
 
 In jeder Auflösung ein Umschalter „Ränge zeigen“ / „Werte zeigen“.
 
-- Beim Umschalten wandern die Punkte animiert (ca. 0,8 s) von ihren Werten zu ihren Rängen: x-Position = Rang von x, y-Position = Rang von y, linear auf 5–95 skaliert. Gemittelte Ränge bei Bindungen wie in `stats.js`.
+- Beim Umschalten wandern die Punkte animiert (ca. 0,8 s) von ihren Werten zu ihren Rängen: x-Position = Rang von x, y-Position = Rang von y, linear auf 0,05–0,95 skaliert. Gemittelte Ränge bei Bindungen wie in `stats.js`.
 - Achsenbeschriftung wechselt zu „Rang von x“ und „Rang von y“.
 - In der Rang-Ansicht wird die Regressionsgerade der Ränge in Spearman-Farbe gezeigt, in der Werte-Ansicht die normale Regressionsgerade in Pearson-Farbe.
 - Dazu ein Satz: „Spearman ρ ist Pearson r, berechnet auf den Rängen.“
@@ -334,7 +338,7 @@ Geklärt mit Version 0.3: Die Steigung bekommt eine eigene Schätzkategorie (Abs
 
 ### Umschalter
 
-- Icons: `assets/icons/sprache-de.png` (deutsche Flagge vorne, wird angezeigt, solange Deutsch aktiv ist) und `assets/icons/sprache-en.png` (britische Flagge vorne, solange Englisch aktiv ist). Originalgröße 56 × 44 px, Darstellung 1×, `image-rendering: pixelated`.
+- Icons: `assets/icons/language-de.png` (deutsche Flagge vorne, wird angezeigt, solange Deutsch aktiv ist) und `assets/icons/language-en.png` (britische Flagge vorne, solange Englisch aktiv ist). Originalgröße 56 × 44 px, Darstellung 1×, `image-rendering: pixelated`.
 - Ein Klick wechselt in die andere Sprache. `aria-label` je nach Zustand: „Sprache: Deutsch. Zu Englisch wechseln.“ bzw. „Language: English. Switch to German.“
 - Platzierung: im Hauptmenü oben rechts in der Menükarte und in der Statusleiste direkt links neben „Menü“. Er darf das Layout aus Abschnitt 9 nicht sprengen; auf schmalen Bildschirmen ggf. nur dort, wo Platz ist, aber immer im Hauptmenü.
 - Umschalten wirkt sofort auf die gesamte sichtbare Ansicht (auch eine laufende Runde oder Auflösung), ohne Spielstand, Plot, Figurenpose oder Fokus zu verändern.
@@ -360,7 +364,7 @@ Geklärt mit Version 0.3: Die Steigung bekommt eine eigene Schätzkategorie (Abs
 ### Generator `steigung`
 
 - Zielkorrelation ρ₀ mit |ρ₀| gleichverteilt aus [0,4; 0,98], Vorzeichen zufällig, bivariat normal wie bei `normal`.
-- Abweichend von Abschnitt 3 wird y **nicht** auf denselben Bereich wie x skaliert, sonst gilt fast immer b ≈ r. Stattdessen: x linear auf eine Spannweite von 45–90 Einheiten, y auf eine Spannweite von 15–90 Einheiten, jeweils zufällig innerhalb 5–95 verschoben. Achsen bleiben 0–100 mit Gitterlinien.
+- Abweichend von Abschnitt 3 wird y **nicht** auf denselben Bereich wie x skaliert, sonst gilt fast immer b ≈ r. Stattdessen: x linear auf eine Spannweite von 0,45–0,90, y auf eine Spannweite von 0,15–0,90, jeweils zufällig innerhalb 0,05–0,95 verschoben. Achsen bleiben 0–1 mit Gitterlinien.
 - In etwa der Hälfte der Steigungsrunden einen Kontrastfall erzwingen: entweder „flach, aber eng“ (|r| ≥ 0,8 und |b| ≤ 0,4) oder „steil, aber locker“ (|r| ≤ 0,6 und |b| ≥ 1,0). Sonst frei.
 - Akzeptanz: |b| ≤ 1,9 (damit der Wert auf den Regler passt), kein `NaN`, Kontrastbedingungen erfüllt, falls gefordert. Sonst neu erzeugen.
 
@@ -374,15 +378,21 @@ Geklärt mit Version 0.3: Die Steigung bekommt eine eigene Schätzkategorie (Abs
 ### Auflösung in Steigungsrunden
 
 - Regressionsgerade wird eingezeichnet, in der Farbe der Magierin.
-- Werte: Steigung b hervorgehoben, daneben Pearson r zum Vergleich (Spearman ρ entfällt hier).
+- Wert: Nur die Steigung b wird hervorgehoben und zentriert angezeigt; Pearson r und Spearman ρ entfallen in der Steigungsauflösung.
 - Ergebnisskala (Abschnitt 12) mit Bereich −2 bis +2, Markern für Schätzung und b, Bändern ±0,10 und ±0,20 um b.
 - Erklärsatz, wenn sich |b| und |r| um mehr als 0,3 unterscheiden, sinngemäß: „Die Steigung sagt, wie stark y pro Einheit x zunimmt. Die Korrelation sagt, wie eng die Punkte an der Geraden liegen. Beides kann sehr verschieden sein.“
 
 ### Farbe und Icon
 
 - Neue feste Farbe für die Steigung: Violett der Magierin, CSS-Variable `--regression` (z. B. `#6b4c9a`), dazu `--regression-paper` als heller Hintergrund, analog zu Pearson und Spearman. Verwendung wie bei den anderen Kategorien (Schild, Regler, Werte, Ergebnisskala, Gerade).
-- Die Punktwolke und die Simpson-Gruppen dürfen kein Violett mehr verwenden (`#6F4E9C` in `plot.js` durch einen Grau- oder Braunton ersetzen).
-- Icon `assets/icons/steigung.png` (22 × 22 px, Steigungsdreieck mit violetter Geraden) für Aufgabenschild und Wert b in der Auflösung.
+- Die Punktwolke und die Simpson-Gruppen dürfen kein Violett verwenden; dafür wird ein Grau- oder Braunton eingesetzt.
+- Icon `assets/icons/slope.png` (22 × 22 px, Steigungsdreieck mit violetter Geraden) für Aufgabenschild und Wert b in der Auflösung.
+
+### Nachtrag 0.3.1
+
+- Eingaben werden zentral geparst. Das Unicode-Minus `−` wird wie `-` behandelt; Komma und Punkt sowie Kurzformen wie `-,5` werden akzeptiert.
+- In Steigungsauflösungen zeigt die Ergebnisskala nur die Schätzung und die Steigung b. Pearson r wird nicht zusätzlich als Zahlenwert angezeigt.
+- Die Plotdaten liegen jetzt in 0–1 statt 0–100. Die Tests prüfen die neue Skala und die unveränderten Statistikwerte.
 
 ### Lernziel
 

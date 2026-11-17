@@ -13,6 +13,7 @@ export const ICON_NAMES = Object.freeze([
   "birne",
   "linie",
   "treppe",
+  "steigung",
   "gluehbirne",
   "schriftrolle",
   "hinweis",
@@ -21,6 +22,26 @@ export const ICON_NAMES = Object.freeze([
 ]);
 
 const iconImages = new Map();
+const ICON_FILES = Object.freeze({
+  "herz-voll": "full-heart",
+  "herz-leer": "empty-heart",
+  "herz-gebrochen": "broken-heart",
+  muenze: "coin",
+  fahne: "flag",
+  zielscheibe: "target",
+  pokal: "trophy",
+  birne: "pear",
+  linie: "line",
+  treppe: "stairs",
+  steigung: "slope",
+  gluehbirne: "lightbulb",
+  schriftrolle: "scroll",
+  hinweis: "hint",
+  burg: "castle",
+  pfeil: "arrow",
+  "sprache-de": "language-de",
+  "sprache-en": "language-en",
+});
 
 function assertIcon(name) {
   if (!ICON_NAMES.includes(name)) {
@@ -30,7 +51,7 @@ function assertIcon(name) {
 
 export function iconUrl(name) {
   assertIcon(name);
-  return `./assets/icons/${name}.png`;
+  return `./assets/icons/${ICON_FILES[name] ?? name}.png`;
 }
 
 function loadIcon(name) {

@@ -14,8 +14,10 @@
   --shadow: #876943;
   --pearson: #416b38;
   --spearman: #a12631;
+  --regression: #6b4c9a;
   --pearson-paper: #e7efdf;
   --spearman-paper: #f4e1df;
+  --regression-paper: #eee7f5;
 }
 
 * {
@@ -32,6 +34,10 @@ body {
   background-size: 13px 15px, 19px 17px, auto;
   color: var(--ink);
   font: 1rem/1.5 system-ui, sans-serif;
+}
+
+body:has(.game-screen:not([hidden])) {
+  overflow-y: hidden;
 }
 
 .app {
@@ -64,6 +70,35 @@ body {
   letter-spacing: 0.14em;
   text-align: center;
   text-transform: uppercase;
+}
+
+.menu-card-header {
+  position: relative;
+}
+
+.menu-card-header .title-mark {
+  padding-right: 3.5rem;
+}
+
+.language-button {
+  width: 2.4rem;
+  height: 2.4rem;
+  min-height: 2.4rem;
+  padding: 0;
+}
+
+.language-button img {
+  display: block;
+  width: 34px;
+  height: 27px;
+  margin: auto;
+  image-rendering: pixelated;
+}
+
+.menu-card-header .language-button {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
 }
 
 h1,
@@ -206,7 +241,7 @@ input:focus-visible {
 
 .game-hud {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.25rem 0.75rem;
   min-width: 0;
@@ -223,6 +258,16 @@ input:focus-visible {
   min-height: 2.4rem;
   padding: 0.35rem 0.65rem;
   font-size: 0.82rem;
+}
+
+.game-hud .language-button {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.game-hud .menu-button {
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .storage-notice,
@@ -396,6 +441,10 @@ input:focus-visible {
   color: var(--spearman);
 }
 
+.prompt-board.coefficient-slope {
+  color: var(--regression);
+}
+
 .plot-container {
   width: min(100%, calc(100dvh - 8.5rem));
   aspect-ratio: 1;
@@ -460,10 +509,82 @@ input:focus-visible {
   gap: 0.75rem;
 }
 
+.guess-slider-wrap {
+  --guess-thumb-width: 1rem;
+  min-width: 0;
+}
+
 .guess-controls input[type="range"] {
   width: 100%;
   min-height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
   accent-color: var(--coefficient-color, var(--pearson));
+}
+
+.guess-controls input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  background: var(--border);
+}
+
+.guess-controls input[type="range"]::-webkit-slider-thumb {
+  width: var(--guess-thumb-width);
+  height: 1.25rem;
+  margin-top: -0.5rem;
+  appearance: none;
+  border: 2px solid var(--border);
+  border-radius: 0;
+  background: var(--coefficient-color, var(--pearson));
+}
+
+.guess-controls input[type="range"]::-moz-range-track {
+  height: 0.25rem;
+  background: var(--border);
+}
+
+.guess-controls input[type="range"]::-moz-range-thumb {
+  width: var(--guess-thumb-width);
+  height: 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 0;
+  background: var(--coefficient-color, var(--pearson));
+}
+
+.guess-scale {
+  position: relative;
+  height: 1rem;
+  margin-top: -0.55rem;
+  margin-inline: calc(var(--guess-thumb-width) / 2);
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.guess-scale-point {
+  position: absolute;
+  top: 0;
+  display: grid;
+  justify-items: center;
+  transform: translateX(-50%);
+}
+
+.guess-scale-min {
+  left: 0;
+}
+
+.guess-scale-mid {
+  left: 50%;
+}
+
+.guess-scale-max {
+  left: 100%;
+}
+
+.guess-scale-point b {
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .guess-controls input[type="text"] {
@@ -498,6 +619,16 @@ input:focus-visible {
   gap: 0.55rem;
 }
 
+.coefficients.single-coefficient {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.coefficients.single-coefficient .coefficient {
+  width: min(100%, 32rem);
+  max-width: 100%;
+  justify-self: center;
+}
+
 .resolution:not([hidden]) {
   display: grid;
   align-content: start;
@@ -505,8 +636,7 @@ input:focus-visible {
   grid-template-columns: minmax(0, 1fr);
   gap: 0.2rem;
   padding: 0.3rem;
-  overflow: auto;
-  scrollbar-width: thin;
+  overflow: visible;
 }
 
 .resolution .resolution-round,
@@ -566,6 +696,15 @@ input:focus-visible {
 .coefficient-highlighted.coefficient-spearman {
   border-color: var(--spearman);
   background: var(--spearman-paper);
+}
+
+.coefficient-slope {
+  color: var(--regression);
+}
+
+.coefficient-highlighted.coefficient-slope {
+  border-color: var(--regression);
+  background: var(--regression-paper);
 }
 
 .coefficient strong {
@@ -629,6 +768,12 @@ input:focus-visible {
   margin: 0.5rem 0;
   color: var(--pearson);
   font-weight: 750;
+}
+
+.regression-slope.slope-highlighted {
+  color: var(--regression);
+  font-size: 1.05rem;
+  font-weight: 850;
 }
 
 .group-results {
@@ -1053,6 +1198,8 @@ input:focus-visible {
 .result-scale-pearson .result-scale-band-narrow { fill: color-mix(in srgb, var(--pearson) 28%, var(--pearson-paper)); }
 .result-scale-spearman .result-scale-band-wide { fill: var(--spearman-paper); }
 .result-scale-spearman .result-scale-band-narrow { fill: color-mix(in srgb, var(--spearman) 25%, var(--spearman-paper)); }
+.result-scale-slope .result-scale-band-wide { fill: var(--regression-paper); }
+.result-scale-slope .result-scale-band-narrow { fill: color-mix(in srgb, var(--regression) 28%, var(--regression-paper)); }
 
 .result-scale-marker {
   stroke: #fff;
@@ -1061,6 +1208,7 @@ input:focus-visible {
 
 .marker-pearson { fill: var(--pearson); }
 .marker-spearman { fill: var(--spearman); }
+.marker-slope { fill: var(--regression); }
 .marker-estimate { fill: #2f2418; }
 
 .result-scale-legend {
@@ -1098,6 +1246,11 @@ input:focus-visible {
 .legend-spearman .legend-swatch {
   background: var(--spearman);
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.legend-slope .legend-swatch {
+  border-radius: 50%;
+  background: var(--regression);
 }
 
 /* Die Runde steht bereits in der Statusleiste; in der Auflösung spart das eine Zeile für die Ergebnisskala. */
