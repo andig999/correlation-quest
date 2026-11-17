@@ -659,7 +659,7 @@ function renderResolution(estimate, previousLives, previousCoins, animate = true
   }
   setIconLabel(elements.continueButton, "pfeil", state.lives === 0 ? TEXTS.finish : TEXTS.continue);
   updateStatus({ previousLives, previousCoins });
-  elements.continueButton.focus();
+  elements.continueButton.focus({ preventScroll: true });
 }
 
 elements.slider.addEventListener("input", () => {

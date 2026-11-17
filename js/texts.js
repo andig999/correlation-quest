@@ -145,7 +145,7 @@ export const TEXTS_EN = {
   round: "Round",
   lives: "Lives",
   coins: "Coins",
-  averageError: "Average error",
+  averageError: "Avg. error",
   averageErrorAccessible: "Average error",
   highscore: "High score",
   newHighscore: "New high score!",

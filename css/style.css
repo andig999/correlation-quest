@@ -341,6 +341,7 @@ input:focus-visible {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .game-status dd {
@@ -872,14 +873,16 @@ input:focus-visible {
     height: auto;
     min-height: 100dvh;
     padding: 0.25rem 0 0;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
     gap: 0.35rem;
   }
 
   .game-columns {
     margin-top: 3.3rem;
+    min-height: 0;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 0.45rem;
   }
 
@@ -893,9 +896,18 @@ input:focus-visible {
   }
 
   .plot-container {
-    width: min(100%, 38dvh, 82dvw);
+    width: min(100%, 50dvh, 94dvw);
+    align-self: center;
     padding: 0.25rem;
     order: 1;
+  }
+
+  .game-screen:has(.resolution:not([hidden])) .plot-container {
+    width: min(100%, 25dvh, 94dvw);
+  }
+
+  .game-screen:has(.resolution:not([hidden])):has(.scenario-explanation:not(:empty)) .plot-container {
+    width: min(100%, 16dvh, 94dvw);
   }
 
   .guess-form,
@@ -906,6 +918,7 @@ input:focus-visible {
   .guess-form {
     margin: 0.1rem auto 0.35rem;
     padding: 0.6rem;
+    align-self: end;
   }
 
   .resolution:not([hidden]) {
@@ -962,7 +975,7 @@ input:focus-visible {
   }
 
   .plot-container {
-    width: min(100%, 32dvh, 82dvw);
+    width: min(100%, 40dvh, 94dvw);
   }
 
   .plot-tick-label {
@@ -1012,6 +1025,20 @@ input:focus-visible {
   }
 }
 
+@media (min-width: 30.001rem) and (orientation: portrait) {
+  .plot-container {
+    width: min(100%, 50dvh, 94dvw);
+  }
+
+  .game-screen:has(.resolution:not([hidden])) .plot-container {
+    width: min(100%, 42dvh, 94dvw);
+  }
+
+  .game-screen:has(.resolution:not([hidden])):has(.scenario-explanation:not(:empty)) .plot-container {
+    width: min(100%, 34dvh, 94dvw);
+  }
+}
+
 @media (min-width: 56.25rem) and (orientation: landscape) {
   .game-screen {
     --game-stage-size: min(calc(100dvh - 7.1rem), calc((min(100vw - 2rem, 75rem) - 1rem) / 2));
@@ -1035,10 +1062,23 @@ input:focus-visible {
     width: min(100%, var(--game-stage-size));
   }
 
+  .guess-form {
+    align-self: end;
+  }
+
   .resolution:not([hidden]) {
     height: 100%;
     min-height: 0;
     align-self: stretch;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .resolution-actions {
+    display: flex;
+    margin-top: auto;
+    padding-top: 0.6rem;
+    border-top: 1px solid #c9b184;
   }
 
   .game-hud {
