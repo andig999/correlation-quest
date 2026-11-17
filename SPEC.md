@@ -406,3 +406,23 @@ Damit ist Lernziel 5 aus Abschnitt 1 abgedeckt: Steigung und Korrelation sind ve
 - Auswahl: Über 300 Runden kommen in normalen Runden alle drei Kategorien im festen Wechsel vor; Sonderfälle fragen nie nach der Steigung.
 - Generator `steigung` über 200 Seeds: |b| ≤ 1,9, kein `NaN`, Kontrastfälle erfüllen ihre Bedingungen, beide Kontrastfälle kommen vor.
 - Wertung Steigung: Fehler 0,10 → Volltreffer, 0,15 → gut, 0,21 → Leben weg; Ø-Fehler halbiert.
+
+## 18. Varianten per URL-Parameter
+
+Die Spielvariante wird beim Laden einmalig aus der URL gelesen. `categories` ist eine
+kommagetrennte Liste aus `pearson`, `spearman` und `slope`; Groß-/Kleinschreibung,
+Leerzeichen und Doppelnennungen werden ignoriert, unbekannte Werte ebenfalls. Ohne
+Parameter oder ohne gültigen Wert sind alle drei Kategorien aktiv. Normale Runden
+wechseln in der Reihenfolge Pearson, Spearman, Steigung nur durch die aktiven
+Kategorien. Sonderfälle fragen ohne Spearman nie Pearson/Spearman-Vergleiche ab:
+Monoton und Ausreißer entfallen dann; U-Form und Simpson fragen nach Pearson,
+beziehungsweise nach Spearman, wenn Pearson nicht aktiv ist. Sind beide
+Korrelationskategorien deaktiviert, gibt es keine Sonderfälle. Der Sonderfall-Anteil
+bleibt ansonsten bei 25 %.
+
+`lang=de` oder `lang=en` setzt die Sprache beim Laden, wird aber nicht gespeichert.
+Der Sprachumschalter und alle Spielaktionen behalten die URL-Parameter bei. Im
+Hauptmenü werden weiterhin alle Figuren gezeigt; im Spiel, in den Regeln und in der
+Auflösung erscheinen nur aktive Kategorien. In Steigungsrunden bleibt Pearson r
+als Vergleichszahl sichtbar. Die Vollvariante verwendet den bisherigen Highscore-
+Schlüssel, andere Varianten hängen ihre aktiven Kategorien mit `+` an.

@@ -38,6 +38,8 @@ export const TEXTS_DE = {
   language: "Deutsch",
   switchLanguage: "Sprache: Deutsch. Zu Englisch wechseln.",
   subtitle: "Ein Abenteuer der Statistik",
+  variantHint: (categories) => `Variante: ${categories.join(" und ")}`,
+  activeCategories: (categories) => `Aktive Kategorien: ${categories.join(", ")}`,
   figuresLabel: "Die drei Figuren",
   plotAria: "Quadratisches Streudiagramm mit x- und y-Achse von 0 bis 1",
   regressionLineAria: (slope) => `Regressionsgerade, Steigung b = ${slope}`,
@@ -61,9 +63,11 @@ export const TEXTS_DE = {
   scalePearson: "Pearson r",
   scaleSpearman: "Spearman ρ",
   scaleSlope: "Steigung b",
-  scaleAria: (estimate, pearson, spearman, slope, limit = 1) => limit === 2
+  scaleAria: (estimate, pearson, spearman, slope, limit = 1, categories = ["pearson", "spearman", "slope"]) => limit === 2
     ? `Ergebnisskala von −2 bis +2: deine Schätzung ${estimate}, Steigung b ${slope}, Pearson r ${pearson}`
-    : `Ergebnisskala von −1 bis 1: deine Schätzung ${estimate}, Pearson r ${pearson}, Spearman ρ ${spearman}`,
+    : `Ergebnisskala von −1 bis 1: deine Schätzung ${estimate}${
+      categories.includes("pearson") ? `, Pearson r ${pearson}` : ""
+    }${categories.includes("spearman") ? `, Spearman ρ ${spearman}` : ""}`,
   startGame: "Spiel starten",
   gameRules: "Spielregeln",
   menu: "Menü",
@@ -138,6 +142,8 @@ export const TEXTS_EN = {
   language: "English",
   switchLanguage: "Language: English. Switch to German.",
   subtitle: "A Statistics Adventure",
+  variantHint: (categories) => `Variant: ${categories.join(" and ")}`,
+  activeCategories: (categories) => `Active categories: ${categories.join(", ")}`,
   figuresLabel: "The three characters",
   plotAria: "Square scatter plot with x and y axes from 0 to 1",
   regressionLineAria: (slope) => `Regression line, slope b = ${slope}`,
@@ -159,9 +165,11 @@ export const TEXTS_EN = {
   specialCase: "Special case",
   scaleEstimate: "Your estimate",
   scaleSlope: "Slope b",
-  scaleAria: (estimate, pearson, spearman, slope, limit = 1) => limit === 2
+  scaleAria: (estimate, pearson, spearman, slope, limit = 1, categories = ["pearson", "spearman", "slope"]) => limit === 2
     ? `Result scale from −2 to +2: your estimate ${estimate}, slope b ${slope}, Pearson r ${pearson}`
-    : `Result scale from −1 to 1: your estimate ${estimate}, Pearson r ${pearson}, Spearman ρ ${spearman}`,
+    : `Result scale from −1 to 1: your estimate ${estimate}${
+      categories.includes("pearson") ? `, Pearson r ${pearson}` : ""
+    }${categories.includes("spearman") ? `, Spearman ρ ${spearman}` : ""}`,
   startGame: "Start game",
   gameRules: "Game rules",
   menu: "Menu",

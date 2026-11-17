@@ -27,10 +27,14 @@ import {
   loadLanguage,
   saveLanguage,
   TEXTS,
+  setLanguage,
 } from "./texts.js";
+import { highscoreKey, parseVariant } from "./variant.js";
 
-const HIGH_SCORE_KEY = "correlation-guesser-highscore";
-loadLanguage();
+const variant = parseVariant(window.location.search);
+if (variant.language) setLanguage(variant.language);
+else loadLanguage();
+const HIGH_SCORE_KEY = highscoreKey(variant.categories);
 const root = document.querySelector("#app");
 if (!root) {
   throw new Error("The game container #app is missing.");
@@ -87,6 +91,8 @@ const elements = {
   newGameButton: document.querySelector("#new-game-button"),
   mainMenuButton: document.querySelector("#main-menu-button"),
   subtitle: document.querySelector("#subtitle"),
+  variantHint: document.querySelector("#variant-hint"),
+  rulesCategories: document.querySelector("#rules-categories"),
   languageMenu: document.querySelector("#language-button-menu"),
   languageHud: document.querySelector("#language-button-hud"),
 };
@@ -121,6 +127,16 @@ function updateLanguageButton(button) {
   button.title = TEXTS.switchLanguage;
 }
 
+const CATEGORY_NAMES = {
+  pearson: () => TEXTS.pearson,
+  spearman: () => TEXTS.spearman,
+  slope: () => TEXTS.regressionSlope,
+};
+
+function activeCategoryLabels() {
+  return variant.categories.map((category) => CATEGORY_NAMES[category]());
+}
+
 function updateCharacterLabels() {
   for (const sprite of [...menuCharacters.values(), roundCharacter].filter(Boolean)) {
     sprite.image.alt = `${TEXTS.characterNames[sprite.element.dataset.character]} – ${
@@ -142,11 +158,15 @@ function applyTexts() {
   document.title = APP_TITLE;
   updateGuessScale();
   elements.subtitle.textContent = TEXTS.subtitle;
+  const categoryLabels = activeCategoryLabels();
+  elements.variantHint.textContent = TEXTS.variantHint(categoryLabels);
+  elements.variantHint.hidden = variant.categories.length === 3;
   document.querySelector("#app-title").textContent = APP_TITLE;
   document.querySelector("#start-highscore-label").textContent = TEXTS.highscore;
   elements.startButton.textContent = TEXTS.startGame;
   elements.rulesButton.textContent = TEXTS.gameRules;
   document.querySelector("#rules-title").textContent = TEXTS.rulesTitle;
+  elements.rulesCategories.textContent = TEXTS.activeCategories(categoryLabels);
   document.querySelector("#rules-start").textContent = TEXTS.rulesStart;
   document.querySelector("#rules-perfect").textContent = TEXTS.rulesPerfect;
   document.querySelector("#rules-close").textContent = TEXTS.rulesClose;
@@ -455,7 +475,9 @@ function updateStatus({ previousLives = state.lives, previousCoins = state.coins
 
 function beginRound() {
   const seed = Math.floor(Math.random() * 4294967296);
-  const scenario = createScenario(seed, state.round + 1, state.normalRounds + 1);
+  const scenario = createScenario(
+    seed, state.round + 1, state.normalRounds + 1, variant.categories,
+  );
   elements.startScreen.hidden = true;
   elements.gameOverScreen.hidden = true;
   elements.gameScreen.hidden = false;
@@ -541,12 +563,17 @@ function renderResolution(estimate, previousLives, previousCoins, animate = true
     pearsonComparison.textContent = `Pearson r = ${formatNumber(result.metrics.pearson)}`;
     slopeCoefficient.append(pearsonComparison);
   } else {
-    appendCoefficient(TEXTS.pearson, result.metrics.pearson, result.coefficient === "pearson", "pearson");
-    appendCoefficient(TEXTS.spearman, result.metrics.spearman, result.coefficient === "spearman", "spearman");
+    if (variant.categories.includes("pearson")) {
+      appendCoefficient(TEXTS.pearson, result.metrics.pearson, result.coefficient === "pearson", "pearson");
+    }
+    if (variant.categories.includes("spearman")) {
+      appendCoefficient(TEXTS.spearman, result.metrics.spearman, result.coefficient === "spearman", "spearman");
+    }
   }
   elements.resultScale.replaceChildren(createResultScale({
     estimate,
-    pearson: result.metrics.pearson,
+    pearson: result.coefficient === "slope" || variant.categories.includes("pearson")
+      ? result.metrics.pearson : undefined,
     spearman: result.coefficient === "slope" ? undefined : result.metrics.spearman,
     slope: result.coefficient === "slope" ? result.metrics.regression.b : undefined,
     asked: result.coefficient,
@@ -564,8 +591,10 @@ function renderResolution(estimate, previousLives, previousCoins, animate = true
         formatNumber(result.metrics.spearman),
         formatNumber(result.metrics.regression.b),
         result.coefficient === "slope" ? 2 : 1,
+        variant.categories,
       ),
     },
+    activeCategories: variant.categories,
   }));
   elements.guessResult.textContent = TEXTS.guessResult(
     formatNumber(estimate),
@@ -763,7 +792,10 @@ elements.continueButton.addEventListener("click", () => {
       ? TEXTS.newHighscore
       : TEXTS.highscoreUnchanged;
     elements.endCharacters.replaceChildren();
-    for (const character of CHARACTER_NAMES) {
+    const activeCharacters = variant.categories.map((category) => (
+      category === "slope" ? "regression" : category
+    ));
+    for (const character of [...new Set(activeCharacters)]) {
       const item = document.createElement("span");
       item.className = "end-character";
       const sprite = createCharacterSprite(character, {

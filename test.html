@@ -40,6 +40,7 @@
       } from "./js/texts.js";
       import { linearRegression, mean, pearson, ranks, spearman } from "./js/stats.js";
       import { createResultScale } from "./js/resultscale.js";
+      import { highscoreKey, parseVariant } from "./js/variant.js";
       import {
         createScenario,
         generateMonotonic,
@@ -77,6 +78,24 @@
         if (expected.r !== undefined) {
           checkNear(`${name}: Pearson r`, pearson(x, y), expected.r);
         }
+
+        check("URL-Variante: Pearson und Steigung werden gelesen",
+          JSON.stringify(parseVariant("?categories=pearson,slope").categories)
+            === JSON.stringify(["pearson", "slope"]));
+        check("URL-Variante: Groß-/Kleinschreibung und Leerzeichen werden ignoriert",
+          JSON.stringify(parseVariant("?categories=PEARSON, Slope").categories)
+            === JSON.stringify(["pearson", "slope"]));
+        check("URL-Variante: unbekannte Kategorien fallen weg",
+          JSON.stringify(parseVariant("?categories=foo").categories)
+            === JSON.stringify(["pearson", "spearman", "slope"]));
+        check("URL-Variante: leere Kategorien ergeben die Vollvariante",
+          JSON.stringify(parseVariant("?categories=").categories)
+            === JSON.stringify(["pearson", "spearman", "slope"]));
+        check("URL-Variante: fehlender Parameter ergibt die Vollvariante",
+          JSON.stringify(parseVariant("").categories)
+            === JSON.stringify(["pearson", "spearman", "slope"]));
+        check("URL-Variante: Sprache wird gelesen",
+          parseVariant("?categories=slope&lang=en").language === "en");
 
         if (expected.rho !== undefined) {
           checkNear(`${name}: Spearman ρ`, spearman(x, y), expected.rho);
@@ -288,6 +307,22 @@
         ["monoton", "ausreisser", "uform", "simpson"].every((type) => (
           [1, 2, 3].every((round) => selectCoefficient(type, round, createRng(1)) !== "slope")
         )));
+
+        for (const categories of [["pearson", "slope"], ["spearman"], ["slope"]]) {
+          let valid = true;
+          let detail = "";
+          for (let round = 1; round <= 300 && valid; round += 1) {
+            const scenario = createScenario(round, round, round, categories);
+            valid = categories.includes(scenario.coefficient)
+              && (scenario.type !== "monoton" && scenario.type !== "ausreisser"
+                || categories.includes("spearman"));
+            if (!valid) detail = `${scenario.type}/${scenario.coefficient}`;
+          }
+          check(`300 Runden für ${categories.join("+")} nutzen nur aktive Kategorien`, valid, detail);
+        }
+        check("Highscore-Schlüssel berücksichtigen die Variante",
+          highscoreKey(["pearson", "spearman", "slope"]) === "correlation-guesser-highscore"
+            && highscoreKey(["pearson", "slope"]) === "correlation-guesser-highscore:pearson+slope");
 
       let spearmanCount = 0;
       let sampleSizesValid = true;

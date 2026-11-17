@@ -45,6 +45,7 @@ function formatTick(value) {
 /**
  * @param {{ estimate: number, pearson: number, spearman?: number, slope?: number,
  *           asked: "pearson" | "spearman" | "slope", min?: number, max?: number,
+ *           activeCategories?: string[],
  *           tolerance?: { wide: number, narrow: number },
  *           labels: { estimate: string, pearson: string, spearman?: string, slope?: string, ariaLabel: string } }} options
  * @returns {HTMLElement}
@@ -52,6 +53,7 @@ function formatTick(value) {
 export function createResultScale({
   estimate, pearson, spearman, slope, asked, min = -1, max = 1,
   tolerance = { wide: 0.1, narrow: 0.05 }, labels,
+  activeCategories = ["pearson", "spearman", "slope"],
 }) {
   const range = max - min;
   const position = (value) => LEFT + ((Math.max(min, Math.min(max, value)) - min) / range) * (RIGHT - LEFT);
@@ -112,10 +114,10 @@ export function createResultScale({
   const guessX = position(estimate);
   const markers = [
     // r etwas über, ρ etwas unter der Linie, damit beide sichtbar bleiben, wenn sie fast gleich sind.
-    asked === "slope" ? null : svgElement("circle", {
+    asked === "slope" || !activeCategories.includes("pearson") ? null : svgElement("circle", {
       class: "result-scale-marker marker-pearson", cx: rX, cy: TRACK_Y - 3, r: 5.5,
     }),
-    spearman === undefined ? null : svgElement("path", {
+    spearman === undefined || !activeCategories.includes("spearman") ? null : svgElement("path", {
       class: "result-scale-marker marker-spearman",
       d: `M ${rhoX} ${TRACK_Y - 3.5} L ${rhoX + 6} ${TRACK_Y + 3} L ${rhoX} ${TRACK_Y + 9.5} L ${rhoX - 6} ${TRACK_Y + 3} Z`,
     }),
@@ -133,7 +135,11 @@ export function createResultScale({
   legend.className = "result-scale-legend";
   const legendItems = asked === "slope"
     ? [["legend-estimate", labels.estimate], ["legend-slope", labels.slope]]
-    : [["legend-estimate", labels.estimate], ["legend-pearson", labels.pearson], ["legend-spearman", labels.spearman]];
+    : [
+      ["legend-estimate", labels.estimate],
+      ...(activeCategories.includes("pearson") ? [["legend-pearson", labels.pearson]] : []),
+      ...(activeCategories.includes("spearman") ? [["legend-spearman", labels.spearman]] : []),
+    ];
   for (const [className, text] of legendItems) {
     const item = document.createElement("span");
     item.className = `legend-item ${className}`;

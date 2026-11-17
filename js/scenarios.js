@@ -2,6 +2,7 @@ import { createRng } from "./rng.js";
 import { linearRegression, pearson, spearman } from "./stats.js";
 
 const SPECIAL_TYPES = ["monoton", "ausreisser", "uform", "simpson"];
+const ALL_CATEGORIES = ["pearson", "spearman", "slope"];
 
 function assertGeneratorInput(rng, n) {
   if (!rng || typeof rng.random !== "function" || typeof rng.normal !== "function") {
@@ -221,7 +222,7 @@ export function generateSimpson(rng, n) {
   throw new Error("Could not generate a Simpson scenario meeting the correlation thresholds.");
 }
 
-export function selectCoefficient(type, normalRoundNumber, rng) {
+export function selectCoefficient(type, normalRoundNumber, rng, categories = ALL_CATEGORIES) {
   if (!Number.isInteger(normalRoundNumber) || normalRoundNumber < 1) {
     throw new RangeError("Expected a normal round number of at least 1.");
   }
@@ -229,25 +230,43 @@ export function selectCoefficient(type, normalRoundNumber, rng) {
     throw new TypeError("Expected an RNG with a random() method.");
   }
 
+  const filtered = categories.filter((category) => ALL_CATEGORIES.includes(category));
+  const active = filtered.length > 0 ? filtered : ALL_CATEGORIES;
+  const hasPearson = active.includes("pearson");
+  const hasSpearman = active.includes("spearman");
   if (type === "monoton" || type === "ausreisser") {
-    return rng.random() < 0.7 ? "spearman" : "pearson";
+    if (!hasSpearman) return hasPearson ? "pearson" : "slope";
+    return !hasPearson || rng.random() < 0.7 ? "spearman" : "pearson";
   }
   if (type === "normal" || type === "uform" || type === "simpson") {
     if (type !== "normal") {
-      return normalRoundNumber % 2 === 1 ? "pearson" : "spearman";
+      if (hasPearson && hasSpearman) {
+        return normalRoundNumber % 2 === 1 ? "pearson" : "spearman";
+      }
+      return hasPearson ? "pearson" : hasSpearman ? "spearman" : "slope";
     }
-    return ["pearson", "spearman", "slope"][(normalRoundNumber - 1) % 3];
+    return active[(normalRoundNumber - 1) % active.length];
   }
   throw new RangeError(`Unknown scenario type: ${type}`);
 }
 
-export function createScenario(seed, roundNumber = 1, normalRoundNumber = roundNumber) {
+export function createScenario(
+  seed,
+  roundNumber = 1,
+  normalRoundNumber = roundNumber,
+  categories = ALL_CATEGORIES,
+) {
   const rng = createRng(seed);
   const n = rng.integer(20, 150);
-  const type = rng.random() < 0.75
-    ? "normal"
-    : SPECIAL_TYPES[rng.integer(0, SPECIAL_TYPES.length - 1)];
-  const coefficient = selectCoefficient(type, normalRoundNumber, rng);
+  const filtered = categories.filter((category) => ALL_CATEGORIES.includes(category));
+  const active = filtered.length > 0 ? filtered : ALL_CATEGORIES;
+  const specialTypes = active.includes("spearman")
+    ? SPECIAL_TYPES
+    : active.includes("pearson") ? ["uform", "simpson"] : [];
+  const type = specialTypes.length > 0 && rng.random() >= 0.75
+    ? specialTypes[rng.integer(0, specialTypes.length - 1)]
+    : "normal";
+  const coefficient = selectCoefficient(type, normalRoundNumber, rng, active);
   const generators = {
     normal: generateNormal,
     steigung: generateSlope,

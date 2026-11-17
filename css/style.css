@@ -120,6 +120,11 @@ h1,
   border-bottom: 2px solid #c9b184;
 }
 
+.variant-hint {
+  font-size: 0.7rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
 .menu-character {
   display: grid;
   justify-items: center;
@@ -218,6 +223,12 @@ input:focus-visible {
 
 .rules-card h2 {
   margin-top: 0;
+}
+
+.copyright {
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.65rem;
 }
 
 .storage-notice,
