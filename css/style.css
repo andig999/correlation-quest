@@ -632,7 +632,7 @@ input:focus-visible {
 
 .resolution:not([hidden]) {
   display: grid;
-  align-content: start;
+  align-content: space-between;
   align-self: start;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.2rem;
@@ -647,6 +647,11 @@ input:focus-visible {
 .resolution .scenario-explanation {
   margin-top: 0.2rem;
   margin-bottom: 0.2rem;
+}
+
+.resolution-results {
+  display: grid;
+  gap: 0.2rem;
 }
 
 .resolution .group-results {
@@ -1072,11 +1077,11 @@ input:focus-visible {
     align-self: stretch;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
   }
 
   .resolution-actions {
     display: flex;
-    margin-top: auto;
     padding-top: 0.6rem;
     border-top: 1px solid #c9b184;
   }
