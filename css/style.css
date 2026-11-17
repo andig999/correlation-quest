@@ -717,6 +717,14 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+.coefficient-comparison {
+  align-self: center;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
 .resolution h2 {
   margin: 0;
   color: var(--pearson);
@@ -971,8 +979,24 @@ input:focus-visible {
 }
 
 @media (max-width: 30rem) {
+  .game-screen:has(.guess-form:not([hidden])) .plot-container {
+    width: min(100%, calc(40dvh - 3rem), 94dvw);
+  }
+
   .game-status {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-status dt {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .game-status div {
@@ -1098,6 +1122,39 @@ input:focus-visible {
 
   .storage-notice {
     margin: 0.1rem 0;
+  }
+}
+
+@media (min-width: 56.25rem) and (max-width: 64rem) and (orientation: landscape) {
+  .resolution:not([hidden]) {
+    gap: 0.1rem;
+    padding: 0.2rem;
+    font-size: 0.9rem;
+  }
+
+  .resolution .resolution-round,
+  .resolution .guess-result,
+  .resolution .round-reward,
+  .resolution .regression-slope,
+  .resolution .scenario-explanation {
+    margin-top: 0.1rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .resolution .coefficient {
+    padding: 0.25rem;
+  }
+
+  .resolution .round-reward {
+    padding: 0.25rem 0.4rem;
+  }
+
+  .resolution .scenario-explanation {
+    font-size: 0.76rem;
+  }
+
+  .resolution-actions {
+    padding-top: 0.3rem;
   }
 }
 

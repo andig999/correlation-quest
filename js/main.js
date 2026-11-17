@@ -512,6 +512,7 @@ function appendCoefficient(label, value, highlighted, coefficient) {
   number.textContent = formatNumber(value);
   item.append(term, number);
   elements.coefficients.append(item);
+  return item;
 }
 
 function appendReward(icon, message) {
@@ -532,7 +533,13 @@ function renderResolution(estimate, previousLives, previousCoins, animate = true
   elements.coefficients.replaceChildren();
   elements.coefficients.classList.toggle("single-coefficient", result.coefficient === "slope");
   if (result.coefficient === "slope") {
-    appendCoefficient(TEXTS.regressionSlope, result.metrics.regression.b, true, "slope");
+    const slopeCoefficient = appendCoefficient(
+      TEXTS.regressionSlope, result.metrics.regression.b, true, "slope",
+    );
+    const pearsonComparison = document.createElement("small");
+    pearsonComparison.className = "coefficient-comparison";
+    pearsonComparison.textContent = `Pearson r = ${formatNumber(result.metrics.pearson)}`;
+    slopeCoefficient.append(pearsonComparison);
   } else {
     appendCoefficient(TEXTS.pearson, result.metrics.pearson, result.coefficient === "pearson", "pearson");
     appendCoefficient(TEXTS.spearman, result.metrics.spearman, result.coefficient === "spearman", "spearman");
@@ -585,7 +592,7 @@ function renderResolution(estimate, previousLives, previousCoins, animate = true
   const outcomeText = outcome === "perfect"
     ? TEXTS.perfectHit
     : outcome === "good" ? TEXTS.goodHit : TEXTS.missed;
-  if (scenario.type === "normal") {
+  if (["normal", "steigung"].includes(scenario.type)) {
     elements.resolutionTitle.textContent = outcomeText;
   } else {
     const hint = createIcon("hinweis", { className: "special-case-icon", label: TEXTS.specialCase });
@@ -603,6 +610,7 @@ function renderResolution(estimate, previousLives, previousCoins, animate = true
     elements.explanation.replaceChildren();
   }
   elements.explanation.hidden = !explanation;
+  elements.regression.hidden = result.coefficient === "slope";
   elements.regression.textContent = `${TEXTS.regressionSlope}: ${formatNumber(result.metrics.regression.b)}`;
   elements.regression.classList.toggle("slope-highlighted", result.coefficient === "slope");
   elements.groupResults.replaceChildren();

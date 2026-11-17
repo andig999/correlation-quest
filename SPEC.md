@@ -152,6 +152,7 @@ Während des Schätzens müssen Statusleiste, Aufgabe, Plot und Eingabe ohne Scr
 
 - Querformat ab ca. 900 px Breite: zwei Spalten. Links der Plot, rechts Statusleiste, Aufgabe und Eingabe. Die Auflösung ersetzt die Eingabe in der rechten Spalte. Der Plot bleibt an derselben Stelle, damit beim Wechsel zur Auflösung nichts springt.
 - Hochformat: kompakte Statusleiste oben, darunter Plot, darunter Eingabe.
+- Auf schmalen Smartphone-Ansichten werden die Statusbezeichnungen ausgeblendet, wenn sie mit den Herzsymbolen kollidieren; Symbole, Werte und der Menütext bleiben sichtbar.
 - Die Plotgröße richtet sich nach der verfügbaren Höhe und Breite (CSS mit `dvh`/`dvw` bzw. `min()`), nicht nach einer festen Breite.
 - In der rechten Spalte bzw. unter dem Plot Platz lassen für spätere Elemente der Auflösung (Version 1.2: Ergebnisskala, Umschalter „Ränge zeigen“).
 
@@ -171,7 +172,7 @@ Während des Schätzens müssen Statusleiste, Aufgabe, Plot und Eingabe ohne Scr
   - die Figur liegt dabei immer sichtbar vorne (z-index), damit es gewollt aussieht und nicht wie ein Darstellungsfehler,
   - kein Abschneiden der Figur am Rand des Fensters oder eines Containers (kein overflow: hidden um die Figur).
   Muss bei allen Prüfgrößen eingehalten werden.
-- Prüfgrößen zusätzlich: 1280 × 720, 1536 × 730, 1024 × 768.
+- Prüfgrößen zusätzlich: 1280 × 720, 1536 × 730, 1024 × 768, 375 × 629 und 375 × 700 (iPhone 13 mini, jeweils ohne bzw. mit Safari-Leisten). Die Auflösung bleibt auch bei 1024 × 768 in allen drei Kategorien ohne eigene Scrollleiste.
 
 ### Start und Navigation
 
@@ -391,7 +392,7 @@ Geklärt mit Version 0.3: Die Steigung bekommt eine eigene Schätzkategorie (Abs
 ### Nachtrag 0.3.1
 
 - Eingaben werden zentral geparst. Das Unicode-Minus `−` wird wie `-` behandelt; Komma und Punkt sowie Kurzformen wie `-,5` werden akzeptiert.
-- In Steigungsauflösungen zeigt die Ergebnisskala nur die Schätzung und die Steigung b. Pearson r wird nicht zusätzlich als Zahlenwert angezeigt.
+- In Steigungsauflösungen zeigt die Ergebnisskala nur die Schätzung und die Steigung b. Pearson r wird als kleine Vergleichszahl neben b angezeigt, nicht auf der Ergebnisskala.
 - Die Plotdaten liegen jetzt in 0–1 statt 0–100. Die Tests prüfen die neue Skala und die unveränderten Statistikwerte.
 
 ### Lernziel
